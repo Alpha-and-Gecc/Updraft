@@ -2,6 +2,7 @@ package com.alpha_and_gec.updraft.base.common.entities;
 
 import com.alpha_and_gec.updraft.base.common.entities.base.UpdraftDragon;
 import com.alpha_and_gec.updraft.base.registry.UpdraftEntities;
+import com.alpha_and_gec.updraft.base.util.IKSolver;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
@@ -54,7 +55,7 @@ public class SteelgoreEntity extends UpdraftDragon {
     public SteelgoreEntity(EntityType<? extends Animal> p_30341_, Level p_30342_) {
         super(p_30341_, p_30342_);
 
-
+        this.tailKinematics = new IKSolver(this, 6, 2, 0.99, 4, true, true);
     }
 
     @Nullable
@@ -72,7 +73,7 @@ public class SteelgoreEntity extends UpdraftDragon {
     }
 
     protected void registerGoals() {
-        this.goalSelector.addGoal(0, new RandomSwimmingGoal(this, 1.0D, 40));
+        this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(3, new BreedGoal(this, 1.0D));
         this.goalSelector.addGoal(5, new FollowParentGoal(this, 1.1D));
         this.goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 1.0D));
@@ -80,7 +81,10 @@ public class SteelgoreEntity extends UpdraftDragon {
     }
 
     public static AttributeSupplier.Builder createAttributes() {
-        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 120.0D).add(Attributes.MOVEMENT_SPEED, 0.25D).add(Attributes.FOLLOW_RANGE, 40.0D).add(Attributes.ATTACK_DAMAGE, 16.0D);
+        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 120.0D)
+                .add(Attributes.MOVEMENT_SPEED, 0.3D)
+                .add(Attributes.FOLLOW_RANGE, 40.0D)
+                .add(Attributes.ATTACK_DAMAGE, 16.0D);
     }
 
     public static boolean checkSteelgoreSpawnRules(EntityType<SteelgoreEntity> entityType, LevelAccessor level, MobSpawnType spawnType, BlockPos position, RandomSource rand) {
@@ -100,7 +104,7 @@ public class SteelgoreEntity extends UpdraftDragon {
     @Override
     public void checkAnimationState() {
         //walking
-        this.idleAnimationState.animateWhen(true, this.tickCount);
+        this.idleAnimationState.animateWhen(this.isAlive() && !this.walkAnimation.isMoving() && !this.isInWaterOrBubble() && !this.isFallFlying(), this.tickCount);
         this.walkAnimationState.animateWhen(this.isAlive() && this.walkAnimation.isMoving() && !this.isInWaterOrBubble() && !this.isFallFlying(), this.tickCount);
 
         //swimming
@@ -120,6 +124,7 @@ public class SteelgoreEntity extends UpdraftDragon {
 
         //special
         this.shakeAnimationState.animateWhen(!this.isAlive() && this.justGotOutOfWater(), this.tickCount);
+        this.shakeAnimationState.animateWhen(!this.isAlive() && this.isEating(), this.tickCount);
 
         //death
         this.dieAnimationState.animateWhen(!this.isAlive() && !this.isInWaterOrBubble(), this.tickCount);
