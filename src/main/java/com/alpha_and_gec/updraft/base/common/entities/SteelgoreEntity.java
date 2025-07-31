@@ -23,11 +23,38 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.biome.Biome;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class SteelgoreEntity extends UpdraftDragon {
 
+    public final net.minecraft.world.entity.AnimationState idleAnimationState = new net.minecraft.world.entity.AnimationState();
+    public final net.minecraft.world.entity.AnimationState walkAnimationState = new net.minecraft.world.entity.AnimationState();
+
+    public final net.minecraft.world.entity.AnimationState waterIdleAnimationState = new net.minecraft.world.entity.AnimationState();
+    public final net.minecraft.world.entity.AnimationState swimAnimationState = new net.minecraft.world.entity.AnimationState();
+
+    public final net.minecraft.world.entity.AnimationState airIdleAnimationState = new net.minecraft.world.entity.AnimationState();
+    public final net.minecraft.world.entity.AnimationState flyAnimationState = new net.minecraft.world.entity.AnimationState();
+    public final net.minecraft.world.entity.AnimationState diveAnimationState = new net.minecraft.world.entity.AnimationState();
+
+    public final net.minecraft.world.entity.AnimationState goreAnimationState = new net.minecraft.world.entity.AnimationState();
+    public final net.minecraft.world.entity.AnimationState breathAnimationState = new net.minecraft.world.entity.AnimationState();
+    public final net.minecraft.world.entity.AnimationState chargeAnimationState = new net.minecraft.world.entity.AnimationState();
+    public final net.minecraft.world.entity.AnimationState roarAnimationState = new net.minecraft.world.entity.AnimationState();
+
+    public final net.minecraft.world.entity.AnimationState shakeAnimationState = new net.minecraft.world.entity.AnimationState();
+
+    public final net.minecraft.world.entity.AnimationState dieAnimationState = new net.minecraft.world.entity.AnimationState();
+    public final net.minecraft.world.entity.AnimationState dieWaterAnimationState = new net.minecraft.world.entity.AnimationState();
+    public final net.minecraft.world.entity.AnimationState dieAirAnimationState = new net.minecraft.world.entity.AnimationState();
+
+    public final int AttackState = 0;
+
+
     public SteelgoreEntity(EntityType<? extends Animal> p_30341_, Level p_30342_) {
         super(p_30341_, p_30342_);
+
+
     }
 
     @Nullable
@@ -67,6 +94,36 @@ public class SteelgoreEntity extends UpdraftDragon {
     }
 
     public int getVariant() {
-        return 1;
+        return 4;
+    }
+
+    @Override
+    public void checkAnimationState() {
+        //walking
+        this.idleAnimationState.animateWhen(true, this.tickCount);
+        this.walkAnimationState.animateWhen(this.isAlive() && this.walkAnimation.isMoving() && !this.isInWaterOrBubble() && !this.isFallFlying(), this.tickCount);
+
+        //swimming
+        this.waterIdleAnimationState.animateWhen(this.isAlive() && this.walkAnimation.isMoving() && this.isInWaterOrBubble() && !this.isFallFlying(), this.tickCount);
+        this.swimAnimationState.animateWhen(this.isAlive() && this.walkAnimation.isMoving() && this.isInWaterOrBubble() && !this.isFallFlying(), this.tickCount);
+
+        //flying
+        this.airIdleAnimationState.animateWhen(this.isAlive() && this.walkAnimation.isMoving() && this.isFallFlying(), this.tickCount);
+        this.flyAnimationState.animateWhen(this.isAlive() && this.walkAnimation.isMoving() && !isDiving() && this.isFallFlying(), this.tickCount);
+        this.diveAnimationState.animateWhen(this.isAlive() && this.walkAnimation.isMoving() && isDiving() && this.isFallFlying(), this.tickCount);
+
+        //attacking
+        this.goreAnimationState.animateWhen(this.isAlive() && this.AttackState == 1, this.tickCount);
+        this.breathAnimationState.animateWhen(this.isAlive() && this.AttackState == 2, this.tickCount);
+        this.chargeAnimationState.animateWhen(this.isAlive() && this.AttackState == 3, this.tickCount);
+        this.roarAnimationState.animateWhen(!this.isAlive() && this.AttackState == 4, this.tickCount);
+
+        //special
+        this.shakeAnimationState.animateWhen(!this.isAlive() && this.justGotOutOfWater(), this.tickCount);
+
+        //death
+        this.dieAnimationState.animateWhen(!this.isAlive() && !this.isInWaterOrBubble(), this.tickCount);
+        this.dieWaterAnimationState.animateWhen(!this.isAlive() && this.isInWaterOrBubble(), this.tickCount);
+        this.dieAirAnimationState.animateWhen(!this.isAlive() && this.isFallFlying(), this.tickCount);
     }
 }

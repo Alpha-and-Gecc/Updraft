@@ -23,4 +23,27 @@ public class UpdraftDragon extends Animal {
     public int getVariant() {
         return 1;
     }
+
+    public void tick() {
+        super.tick();
+
+        if (this.level().isClientSide()){
+            this.checkAnimationState();
+        }
+    }
+
+
+    public void checkAnimationState() {
+        //method ran per - tick to assert which animation a dragon ought to play
+    }
+
+    public boolean justGotOutOfWater() {
+        //check when was the last time the dragon touched water
+        return false;
+    }
+
+    public boolean isDiving() {
+        //check if the dragon is at the correct angle to play the diving animation
+        return false;
+    }
 }

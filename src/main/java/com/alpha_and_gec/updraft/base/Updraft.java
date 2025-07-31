@@ -6,6 +6,8 @@ import com.alpha_and_gec.updraft.base.common.entities.SteelgoreEntity;
 import com.alpha_and_gec.updraft.base.registry.UpdraftEntities;
 import com.alpha_and_gec.updraft.base.registry.UpdraftItems;
 import com.alpha_and_gec.updraft.base.registry.UpdraftLayers;
+import com.alpha_and_gec.updraft.base.registry.creative.UpdraftCreativeTab;
+import com.mojang.logging.LogUtils;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.animal.AbstractFish;
@@ -31,14 +33,16 @@ import java.util.List;
 @Mod(Updraft.MOD_ID)
 public class Updraft {
     public static final String MOD_ID = "updraft";
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public Updraft() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-        //UpdraftCreativeTabs.register(modEventBus);
+
         MinecraftForge.EVENT_BUS.register(this);
 
-        UpdraftItems.register(modEventBus);
         UpdraftEntities.register(modEventBus);
+        UpdraftCreativeTab.register(modEventBus);
+        UpdraftItems.register(modEventBus);
         //UpdraftBlocks.BLOCKS.register(modEventBus);
         //UpdraftSounds.REGISTER.register(modEventBus);
         //UpdraftLootModifiers.register(modEventBus);
@@ -57,30 +61,7 @@ public class Updraft {
     public static class ClientModEvents {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            //register RENDERERS here
             EntityRenderers.register(UpdraftEntities.STEELGORE.get(), SteelgoreRenderer:: new);
-
         }
-    }
-
-    @SubscribeEvent
-    public static void registerLayer(EntityRenderersEvent.RegisterLayerDefinitions event) {
-        //register LAYERS here
-        event.registerLayerDefinition(UpdraftLayers.STEELGORE_LAYER, SteelgoreModel::createBodyLayer);
-    }
-
-    private void registerEntityAttributes(EntityAttributeCreationEvent event) {
-        //register ATTRIBUTES here
-        event.put(UpdraftEntities.STEELGORE.get(), SteelgoreEntity.createAttributes().build());
-    }
-
-    private void registerCommon(FMLCommonSetupEvent event) {
-        //register SPAWNS here
-        SpawnPlacements.register(UpdraftEntities.STEELGORE.get(), SpawnPlacements.Type.NO_RESTRICTIONS, Heightmap.Types.MOTION_BLOCKING, SteelgoreEntity::checkSteelgoreSpawnRules);
-
-        event.enqueueWork(() -> {
-            //PUT THINGS IN TAGS IN HERE
-            //ComposterBlock.COMPOSTABLES.put(AAItems.WORM.get().asItem(), 1.0F);
-        });
     }
 }

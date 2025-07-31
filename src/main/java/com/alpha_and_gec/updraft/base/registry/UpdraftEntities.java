@@ -16,13 +16,12 @@ public class UpdraftEntities {
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Updraft.MOD_ID);
 
     public static final RegistryObject<EntityType<SteelgoreEntity>> STEELGORE =
-            create("steelgore",
-                    EntityType.Builder.of(SteelgoreEntity::new, MobCategory.CREATURE)
-                            .sized(0.4f, 0.35f));
+            ENTITY_TYPES.register("steelgore",
+                    () -> EntityType.Builder.of(SteelgoreEntity::new, MobCategory.CREATURE)
+                            .sized(3.5f, 3f)
+                            .clientTrackingRange(10)
+                            .build(new ResourceLocation(Updraft.MOD_ID, "steelgore").toString()));
 
-    private static <T extends Entity> RegistryObject<EntityType<T>> create(String name, EntityType.Builder<T> builder) {
-        return ENTITY_TYPES.register(name, () -> builder.build(Updraft.MOD_ID + "." + name));
-    }
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);

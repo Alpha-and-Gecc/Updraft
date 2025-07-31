@@ -3,6 +3,7 @@ package com.alpha_and_gec.updraft.base.client.entities.model;// Made with Blockb
 // Paste this class into your mod and generate all required imports
 
 
+import com.alpha_and_gec.updraft.base.client.entities.animations.SteelgoreAnimations;
 import com.alpha_and_gec.updraft.base.common.entities.SteelgoreEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -11,7 +12,11 @@ import net.minecraft.client.model.HierarchicalModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
+import net.minecraft.util.Mth;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+@OnlyIn(Dist.CLIENT)
 public class SteelgoreModel<T extends SteelgoreEntity> extends HierarchicalModel<T> {
 
 	private final ModelPart root;
@@ -409,7 +414,15 @@ public class SteelgoreModel<T extends SteelgoreEntity> extends HierarchicalModel
 
 	@Override
 	public void setupAnim(SteelgoreEntity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+		this.root().getAllParts().forEach(ModelPart::resetPose);
 
+		this.neck.xRot = (headPitch * (Mth.DEG_TO_RAD))/2;
+		this.head.xRot = (headPitch * (Mth.DEG_TO_RAD))/2;
+
+		this.neck.yRot = (netHeadYaw * (Mth.DEG_TO_RAD))/2;
+		this.head.yRot = (netHeadYaw * (Mth.DEG_TO_RAD))/2;
+
+		this.animate(entity.idleAnimationState, SteelgoreAnimations.IDLE, ageInTicks, (float) (0.5 + limbSwingAmount * 4.0f));
 	}
 
 	@Override
@@ -419,6 +432,6 @@ public class SteelgoreModel<T extends SteelgoreEntity> extends HierarchicalModel
 
 	@Override
 	public ModelPart root() {
-		return this.core;
+		return this.root;
 	}
 }
