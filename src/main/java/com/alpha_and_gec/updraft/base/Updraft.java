@@ -1,8 +1,15 @@
 package com.alpha_and_gec.updraft.base;
 
+import com.alpha_and_gec.updraft.base.client.entities.model.SteelgoreModel;
+import com.alpha_and_gec.updraft.base.client.entities.renderer.SteelgoreRenderer;
+import com.alpha_and_gec.updraft.base.common.entities.SteelgoreEntity;
+import com.alpha_and_gec.updraft.base.registry.UpdraftEntities;
+import com.alpha_and_gec.updraft.base.registry.UpdraftItems;
+import com.alpha_and_gec.updraft.base.registry.UpdraftLayers;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.animal.AbstractFish;
+import net.minecraft.world.level.block.ComposterBlock;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -27,20 +34,20 @@ public class Updraft {
 
     public Updraft() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-        UpdraftCreativeTabs.register(modEventBus);
+        //UpdraftCreativeTabs.register(modEventBus);
         MinecraftForge.EVENT_BUS.register(this);
 
-        UpdraftItems.REGISTER.register(modEventBus);
-        UpdraftEntities.REGISTER.register(modEventBus);
-        UpdraftBlocks.BLOCKS.register(modEventBus);
-        UpdraftSounds.REGISTER.register(modEventBus);
-        UpdraftLootModifiers.register(modEventBus);
-        UpdraftFeatures.FEATURES.register(modEventBus);
-        UpdraftPOI.DEF_REG.register(modEventBus);
+        UpdraftItems.register(modEventBus);
+        UpdraftEntities.register(modEventBus);
+        //UpdraftBlocks.BLOCKS.register(modEventBus);
+        //UpdraftSounds.REGISTER.register(modEventBus);
+        //UpdraftLootModifiers.register(modEventBus);
+        //UpdraftFeatures.FEATURES.register(modEventBus);
+        //UpdraftPOI.DEF_REG.register(modEventBus);
 
         modEventBus.addListener(this::commonSetup);
 
-        GeckoLib.initialize();
+        //GeckoLib.initialize();
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
@@ -50,31 +57,30 @@ public class Updraft {
     public static class ClientModEvents {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            //REGISTER RENDERERS HERE
-            EntityRenderers.register(ReefEntities.GOBY.get(), GobyRenderer:: new);
+            //register RENDERERS here
+            EntityRenderers.register(UpdraftEntities.STEELGORE.get(), SteelgoreRenderer:: new);
 
         }
     }
 
     @SubscribeEvent
     public static void registerLayer(EntityRenderersEvent.RegisterLayerDefinitions event) {
-        //REGISTER LAYERS HERE
-        event.registerLayerDefinition(ReefModelLayers.ANGELFISH_LAYER, AngelfishModel::createBodyLayer);
+        //register LAYERS here
+        event.registerLayerDefinition(UpdraftLayers.STEELGORE_LAYER, SteelgoreModel::createBodyLayer);
     }
 
     private void registerEntityAttributes(EntityAttributeCreationEvent event) {
-        //REGISTER ATTRIBUTES HERE
-        event.put(AAEntities.WHITE_FRUIT_BAT.get(), WhiteFruitBatEntity.createAttributes().build());
-        event.put(AAEntities.LONGHORN_COWFISH.get(), AbstractFish.createAttributes().build());
+        //register ATTRIBUTES here
+        event.put(UpdraftEntities.STEELGORE.get(), SteelgoreEntity.createAttributes().build());
     }
 
     private void registerCommon(FMLCommonSetupEvent event) {
-        //REGISTER SPAWNS HERE
-        SpawnPlacements.register(AAEntities.WHITE_FRUIT_BAT.get(), SpawnPlacements.Type.NO_RESTRICTIONS, Heightmap.Types.MOTION_BLOCKING, WhiteFruitBatEntity::checkBatSpawnRules);
-        SpawnPlacements.register(AAEntities.LONGHORN_COWFISH.get(), SpawnPlacements.Type.IN_WATER, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, WaterAnimal::checkSurfaceWaterAnimalSpawnRules);
+        //register SPAWNS here
+        SpawnPlacements.register(UpdraftEntities.STEELGORE.get(), SpawnPlacements.Type.NO_RESTRICTIONS, Heightmap.Types.MOTION_BLOCKING, SteelgoreEntity::checkSteelgoreSpawnRules);
 
         event.enqueueWork(() -> {
-            ComposterBlock.COMPOSTABLES.put(AAItems.WORM.get().asItem(), 1.0F);
+            //PUT THINGS IN TAGS IN HERE
+            //ComposterBlock.COMPOSTABLES.put(AAItems.WORM.get().asItem(), 1.0F);
         });
     }
 }
