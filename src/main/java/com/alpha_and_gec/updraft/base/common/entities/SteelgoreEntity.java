@@ -79,7 +79,7 @@ public class SteelgoreEntity extends UpdraftDragon {
     public SteelgoreEntity(EntityType<? extends Animal> p_30341_, Level p_30342_) {
         super(p_30341_, p_30342_);
 
-        this.tailKinematics = new IKSolver(this, 6, 2, 0.75, 2, false, true);
+        this.tailKinematics = new IKSolver(this, 6, 2, 1, 0.75, 2, false, true);
         this.setMeleeRadius(3.5f);
         this.setMaxUpStep(1);
     }
@@ -107,7 +107,7 @@ public class SteelgoreEntity extends UpdraftDragon {
                 .add(Attributes.ARMOR, 20.0D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 2D)
                 .add(Attributes.ATTACK_DAMAGE, 16.0D)
-                .add(Attributes.ATTACK_KNOCKBACK, 3.0D)
+                .add(Attributes.ATTACK_KNOCKBACK, 5D)
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
                 .add(Attributes.FOLLOW_RANGE, 40.0D);
     }
@@ -134,6 +134,10 @@ public class SteelgoreEntity extends UpdraftDragon {
                 super.isInvulnerableTo(source);
     }
 
+    public boolean fireImmune() {
+        return true;
+    }
+
     @Override
     public void push (Entity pEntity) {
         super.push(pEntity);
@@ -142,9 +146,9 @@ public class SteelgoreEntity extends UpdraftDragon {
             pEntity.hurt(this.damageSources().mobAttack(this), (float) (this.getAttribute(Attributes.ATTACK_DAMAGE).getValue() * 3));
 
             if (pEntity instanceof LivingEntity liver) {
-                Vec3 dirDiff = this.position().subtract(pEntity.position());
+                Vec3 dirDiff = this.position().subtract(pEntity.position()).normalize();
                 liver.knockback(this.getAttributeValue(Attributes.ATTACK_KNOCKBACK), dirDiff.x, dirDiff.z);
-                liver.setDeltaMovement(liver.getDeltaMovement().add(0, this.getAttributeValue(Attributes.ATTACK_KNOCKBACK), 0));
+                liver.setDeltaMovement(liver.getDeltaMovement().add(0, this.getAttributeValue(Attributes.ATTACK_KNOCKBACK) * 0.1, 0));
                 //yes I know vertical knockback is not proportional to horizontal knockback, it looks funnier
 
 

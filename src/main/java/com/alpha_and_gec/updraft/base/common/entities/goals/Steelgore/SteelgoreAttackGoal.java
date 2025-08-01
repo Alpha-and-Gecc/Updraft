@@ -193,7 +193,7 @@ public class SteelgoreAttackGoal extends BaseAttackGoal {
                 for (int que = 0; que < 3; que ++){
                     //System.out.println("produce");
                     SmallFireball smog = new SmallFireball(this.creature.level(), this.creature, this.creature.getRandom().triangle(d1, 2.297D * d4), d2, this.creature.getRandom().triangle(d3, 2.297D * d4));
-                    smog.setPos(smog.getX(), origin.y, smog.getZ());
+                    smog.setPos(origin.x(), origin.y(), origin.z());
                     smog.setOwner(this.creature);
                     this.creature.level().addFreshEntity(smog);
                 }
