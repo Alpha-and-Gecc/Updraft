@@ -14,9 +14,13 @@ public class MathHelpers {
 
         if (returning) {
             if (angleY >= 0 && angleY < 180) {
-                point = MathHelpers.rotateAroundCenterFlatDeg(anchor, point, (double) -perTickRate);
+                if (angleY - perTickRate > 0) {
+                    point = MathHelpers.rotateAroundCenterFlatDeg(anchor, point, (double) -(perTickRate));
+                }
             } else if (angleY < 0 && angleY >= -180) {
-                point = MathHelpers.rotateAroundCenterFlatDeg(anchor, point, (double) perTickRate);
+                if (angleY + perTickRate < 0) {
+                    point = MathHelpers.rotateAroundCenterFlatDeg(anchor, point, (double) perTickRate);
+                }
             }
         }
 

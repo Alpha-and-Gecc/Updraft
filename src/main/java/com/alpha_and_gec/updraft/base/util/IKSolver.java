@@ -387,6 +387,14 @@ public class IKSolver {
         return currentBodyPitch;
     }
 
+    public Vec3 getTorsoFront() {
+        return torsoFront;
+    }
+
+    public Vec3 getTorsoBack() {
+        return torsoBack;
+    }
+
     public void visualizeNodes(Level level) {
         int viewOffset = 1;
         //if (!level.isClientSide()) {

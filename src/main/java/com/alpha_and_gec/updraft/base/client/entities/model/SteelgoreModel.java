@@ -425,18 +425,20 @@ public class SteelgoreModel<T extends SteelgoreEntity> extends HierarchicalModel
 
 		this.animate(entity.idleAnimationState, SteelgoreAnimations.IDLE, ageInTicks, (float) (0.5 + limbSwingAmount * 4.0f));
 
-		this.tail.yRot = this.tail.yRot - ((float) ((MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[0], entity.tailKinematics.getTailYaws()[0], 0.01))));
-		this.tail2.yRot = this.tail2.yRot - ((float) ((MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[1], entity.tailKinematics.getTailYaws()[1], 0.01))));
-		this.tail3.yRot = this.tail3.yRot - ((float) ((MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[2], entity.tailKinematics.getTailYaws()[1], 0.01))));
-		this.tail4.yRot = this.tail4.yRot - ((float) ((MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[3], entity.tailKinematics.getTailYaws()[1], 0.01))));
-		this.tail5.yRot = this.tail5.yRot - ((float) ((MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[4], entity.tailKinematics.getTailYaws()[1], 0.01))));
-		this.tail6.yRot = this.tail6.yRot - ((float) ((MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[5], entity.tailKinematics.getTailYaws()[1], 0.01))));
-		entity.tailKinematics.getCurrentTailYaws()[0] = (float) MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[0], entity.tailKinematics.getTailYaws()[0], 0.01);
-		entity.tailKinematics.getCurrentTailYaws()[1] = (float) MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[1], entity.tailKinematics.getTailYaws()[1], 0.01);
-		entity.tailKinematics.getCurrentTailYaws()[2] = (float) MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[2], entity.tailKinematics.getTailYaws()[2], 0.01);
-		entity.tailKinematics.getCurrentTailYaws()[3] = (float) MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[3], entity.tailKinematics.getTailYaws()[3], 0.01);
-		entity.tailKinematics.getCurrentTailYaws()[4] = (float) MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[4], entity.tailKinematics.getTailYaws()[4], 0.01);
-		entity.tailKinematics.getCurrentTailYaws()[5] = (float) MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[5], entity.tailKinematics.getTailYaws()[5], 0.01);
+		double rate = 0.025;
+
+		this.tail.yRot = this.tail.yRot - ((float) ((MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[0], entity.tailKinematics.getTailYaws()[0], rate))));
+		this.tail2.yRot = this.tail2.yRot - ((float) ((MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[1], entity.tailKinematics.getTailYaws()[1], rate))));
+		this.tail3.yRot = this.tail3.yRot - ((float) ((MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[2], entity.tailKinematics.getTailYaws()[1], rate))));
+		this.tail4.yRot = this.tail4.yRot - ((float) ((MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[3], entity.tailKinematics.getTailYaws()[1], rate))));
+		this.tail5.yRot = this.tail5.yRot - ((float) ((MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[4], entity.tailKinematics.getTailYaws()[1], rate))));
+		this.tail6.yRot = this.tail6.yRot - ((float) ((MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[5], entity.tailKinematics.getTailYaws()[1], rate))));
+		entity.tailKinematics.getCurrentTailYaws()[0] = (float) MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[0], entity.tailKinematics.getTailYaws()[0], rate);
+		entity.tailKinematics.getCurrentTailYaws()[1] = (float) MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[1], entity.tailKinematics.getTailYaws()[1], rate);
+		entity.tailKinematics.getCurrentTailYaws()[2] = (float) MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[2], entity.tailKinematics.getTailYaws()[2], rate);
+		entity.tailKinematics.getCurrentTailYaws()[3] = (float) MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[3], entity.tailKinematics.getTailYaws()[3], rate);
+		entity.tailKinematics.getCurrentTailYaws()[4] = (float) MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[4], entity.tailKinematics.getTailYaws()[4], rate);
+		entity.tailKinematics.getCurrentTailYaws()[5] = (float) MathHelpers.LerpDegrees(entity.tailKinematics.getCurrentTailYaws()[5], entity.tailKinematics.getTailYaws()[5], rate);
 	}
 
 	@Override

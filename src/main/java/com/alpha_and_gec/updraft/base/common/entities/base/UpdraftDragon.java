@@ -5,6 +5,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.WaterAnimal;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
@@ -15,6 +16,12 @@ public class UpdraftDragon extends Animal {
     public IKSolver tailKinematics;
 
     public boolean flightState = false;
+    public int attackState = 0;
+    //state determining which animation this beast should play
+
+    public boolean contactDmg = false;
+
+    public float meleeRadius = 3.5F;
 
     public int wetness = 0;
     public int wetlim = 100;
@@ -37,6 +44,7 @@ public class UpdraftDragon extends Animal {
         super.tick();
 
         this.tailKinematics.TakePerTickAction(this);
+        this.tickCDs();
 
         if (this.isInWaterRainOrBubble()) {
             wetness = Math.min(wetlim, wetness + 1);
@@ -49,10 +57,14 @@ public class UpdraftDragon extends Animal {
         }
     }
 
+    public void tickCDs() {
+        //method ran per - tick to tick down cooldowns
+    }
 
     public void checkAnimationState() {
         //method ran per - tick to assert which animation a dragon ought to play
     }
+
 
     public boolean justGotOutOfWater() {
         //check when was the last time the dragon touched water
@@ -72,5 +84,29 @@ public class UpdraftDragon extends Animal {
     public boolean isEating() {
         //check if the dragon is eating smthing
         return false;
+    }
+
+    public void setAttackState(int state) {
+        this.attackState = state;
+    }
+
+    public int getAttackState() {
+        return this.attackState;
+    }
+
+    public void setCanContactDamage(boolean state) {
+        this.contactDmg = state;
+    }
+
+    public boolean canContactDamage() {
+        return this.contactDmg;
+    }
+
+    public void setMeleeRadius(float state) {
+        this.meleeRadius = state;
+    }
+
+    public float getMeleeRadius() {
+        return this.meleeRadius;
     }
 }
