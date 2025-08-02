@@ -85,7 +85,7 @@ public class SteelgoreAttackGoal extends BaseAttackGoal {
     }
 
     protected void tickGore() {
-        System.out.println("gore");
+        //System.out.println("gore");
         this.attackTime++;
         this.creature.getNavigation().stop();
 
@@ -165,8 +165,8 @@ public class SteelgoreAttackGoal extends BaseAttackGoal {
     }
 
     protected void tickBreath() {
-        System.out.println("breath");
-        System.out.println(this.creature.breathCharge);
+        //System.out.println("breath");
+        //System.out.println(this.creature.breathCharge);
         this.attackTime++;
         this.creature.getNavigation().stop();
         LivingEntity target = this.creature.getTarget();
@@ -207,6 +207,13 @@ public class SteelgoreAttackGoal extends BaseAttackGoal {
             this.attackTime = 0;
             this.creature.setAttackState(0);
         }
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
+        this.creature.setCanContactDamage(false);
+        //System.out.println("goalEnd");
     }
 
 }

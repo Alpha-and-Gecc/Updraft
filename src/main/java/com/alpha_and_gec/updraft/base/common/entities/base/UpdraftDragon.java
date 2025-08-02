@@ -2,16 +2,24 @@ package com.alpha_and_gec.updraft.base.common.entities.base;
 
 import com.alpha_and_gec.updraft.base.util.IKSolver;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
-public class UpdraftDragon extends Animal {
+public class UpdraftDragon extends TamableAnimal {
+    private int tamedBehaviourState = 0;
+    //0 = wander
+    //1 = sit
+    //2 = follow
+
+    private boolean selfFriendly = false;
+    //^do NOT edit this variable outside of the constructor
 
     public IKSolver tailKinematics;
 
@@ -27,7 +35,7 @@ public class UpdraftDragon extends Animal {
     public int wetlim = 100;
     //how many ticks does it take to dry
 
-    protected UpdraftDragon(EntityType<? extends Animal> p_30341_, Level p_30342_) {
+    protected UpdraftDragon(EntityType<? extends TamableAnimal> p_30341_, Level p_30342_) {
         super(p_30341_, p_30342_);
     }
 
@@ -55,6 +63,24 @@ public class UpdraftDragon extends Animal {
         if (this.level().isClientSide()){
             this.checkAnimationState();
         }
+    }
+
+    public void travel(Vec3 travelVector) {
+
+        if (this.isOrderedToSit()) {
+            this.getNavigation().stop();
+            this.setTarget(null);
+            System.out.println("sitte");
+        } else {
+            super.travel(travelVector);
+        }
+
+    }
+
+    public InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
+        return super.mobInteract(pPlayer, pHand);
+
+
     }
 
     public void tickCDs() {
@@ -108,5 +134,66 @@ public class UpdraftDragon extends Animal {
 
     public float getMeleeRadius() {
         return this.meleeRadius;
+    }
+
+    public boolean hasTarget() {
+        return this.getTarget() != null;
+    }
+
+
+    public boolean hasOwner() {
+        return this.getOwner() != null;
+    }
+
+    public void setBehaviour(int state) {
+        this.tamedBehaviourState = state;
+    }
+
+    public void cycleBehaviour() {
+        switch (this.tamedBehaviourState) {
+            case 0 -> this.sit();
+            case 1 -> this.follow();
+            case 2 -> this.wander();
+        }
+    }
+
+    public void wander() {
+        this.setOrderedToSit(false);
+        this.setInSittingPose(false);
+        this.setBehaviour(0);
+    }
+
+    public void sit() {
+        this.setOrderedToSit(true);
+        //ordered to sit tells goals that tghe entity is sitting
+        this.setInSittingPose(true);
+        this.setBehaviour(1);
+    }
+
+    public void follow() {
+        this.setOrderedToSit(false);
+        this.setInSittingPose(false);
+        this.setBehaviour(2);
+    }
+
+    public int getBehaviour() {
+        return this.tamedBehaviourState;
+    }
+
+    public boolean isWandering() {
+        return this.getBehaviour() == 0;
+    }
+
+    public boolean isFollowing() {
+        return this.getBehaviour() == 2;
+    }
+
+
+    public void setSelfFriendly(boolean state) {
+        this.selfFriendly = state;
+    }
+
+    public boolean isSelfFriendly() {
+        return this.selfFriendly;
     }
 }

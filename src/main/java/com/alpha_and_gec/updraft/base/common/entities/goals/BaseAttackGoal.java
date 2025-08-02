@@ -74,6 +74,14 @@ public class BaseAttackGoal extends Goal{
             return false;
         }
 
+        if (target instanceof Player p) {
+            if (p.isCreative() || !p.isSpectator()) {
+                return false;
+            } else if (this.creature.isOwnedBy(p)) {
+                return false;
+            }
+        }
+
         return true;
     }
 
