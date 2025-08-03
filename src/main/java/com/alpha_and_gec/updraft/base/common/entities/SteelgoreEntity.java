@@ -7,10 +7,7 @@ import com.alpha_and_gec.updraft.base.registry.UpdraftEntities;
 import com.alpha_and_gec.updraft.base.registry.UpdraftTags;
 import com.alpha_and_gec.updraft.base.util.IKSolver;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
@@ -21,25 +18,20 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
-import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal;
-import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.PolarBear;
+import net.minecraft.world.entity.item.FallingBlockEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 public class SteelgoreEntity extends UpdraftDragon {
     public final net.minecraft.world.entity.AnimationState stunAnimationState = new net.minecraft.world.entity.AnimationState();
@@ -60,6 +52,7 @@ public class SteelgoreEntity extends UpdraftDragon {
     public final net.minecraft.world.entity.AnimationState roarAnimationState = new net.minecraft.world.entity.AnimationState();
 
     public final net.minecraft.world.entity.AnimationState shakeAnimationState = new net.minecraft.world.entity.AnimationState();
+    public final net.minecraft.world.entity.AnimationState feedAnimationState = new net.minecraft.world.entity.AnimationState();
 
     public final net.minecraft.world.entity.AnimationState dieAnimationState = new net.minecraft.world.entity.AnimationState();
     public final net.minecraft.world.entity.AnimationState dieWaterAnimationState = new net.minecraft.world.entity.AnimationState();
@@ -117,8 +110,8 @@ public class SteelgoreEntity extends UpdraftDragon {
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 120.0D)
-                .add(Attributes.ARMOR, 20.0D)
-                .add(Attributes.KNOCKBACK_RESISTANCE, 2D)
+                .add(Attributes.ARMOR, 10.0D)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 1D)
                 .add(Attributes.ATTACK_DAMAGE, 16.0D)
                 .add(Attributes.ATTACK_KNOCKBACK, 5D)
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
@@ -129,12 +122,14 @@ public class SteelgoreEntity extends UpdraftDragon {
         if (this.isStunned()) {
             this.getNavigation().stop();
             this.setTarget(null);
-            System.out.println("stun");
+            //System.out.println("stun");
         }
 
         //if (this.getOwner() != null) {
         //    System.out.println("tamed");
         //}
+
+        //System.out.println(this.entityData.get(ANIMATION_STATE));
 
         super.tick();
     }
@@ -171,9 +166,21 @@ public class SteelgoreEntity extends UpdraftDragon {
     }
 
     public boolean hurt(DamageSource pSource, float pAmount) {
-        if (pSource.is(DamageTypes.FALLING_ANVIL)) {
+        if (pSource.is(DamageTypes.FALLING_ANVIL) && pSource.getEntity() instanceof FallingBlockEntity m) {
             this.stun();
+
+            Vec3 dirDiff = m.position().subtract(this.position()).normalize().scale(this.getAttributeValue(Attributes.ATTACK_KNOCKBACK) * 0.25);
+            m.disableDrop();
+            ItemEntity pingus = m.spawnAtLocation(m.getBlockState().getBlock());
+            m.discard();
+            if (pingus != null) {
+                pingus.setDeltaMovement(dirDiff);
+            }
+            //breaks the falling anvil entity and deflects the dropped anvil item away
+
+            System.out.println(m.getDeltaMovement());
             return super.hurt(pSource, pAmount/5);
+
         } else {
             return super.hurt(pSource, pAmount);
         }
@@ -182,7 +189,7 @@ public class SteelgoreEntity extends UpdraftDragon {
 
     @Override
     public void push (Entity pEntity) {
-        super.push(pEntity);
+        System.out.println(pEntity);
 
         if (this.canContactDamage() && this.getTarget() != null) {
             pEntity.hurt(this.damageSources().mobAttack(this), (float) (this.getAttribute(Attributes.ATTACK_DAMAGE).getValue() * 3));
@@ -196,6 +203,8 @@ public class SteelgoreEntity extends UpdraftDragon {
         } else {
             this.setCanContactDamage(false);
         }
+
+        super.push(pEntity);
     }
 
     public boolean isFood(ItemStack stack) {
@@ -212,7 +221,7 @@ public class SteelgoreEntity extends UpdraftDragon {
             this.tame(futureOwner);
             this.unstun();
             this.level().broadcastEntityEvent(this, (byte)7);
-            System.out.println("tamed");
+            //System.out.println("tamed");
             return true;
         } else {
             this.unstun();
@@ -236,7 +245,13 @@ public class SteelgoreEntity extends UpdraftDragon {
             return flag ? InteractionResult.CONSUME : InteractionResult.PASS;
             //just makes it so that it skips the interaction if it's clientside
 
-        } else if (this.isFood(itemstack)) {
+        }
+
+        if (this.isDeadOrDying()) {
+            return InteractionResult.SUCCESS;
+        }
+
+        if (this.isFood(itemstack)) {
             if (this.isStunned()) {
                 if(!this.hasOwner()) {
                     //Try taming if there isn't already an owner
@@ -270,13 +285,14 @@ public class SteelgoreEntity extends UpdraftDragon {
                 }
             }
         } else {
-            System.out.println(this.isTame());
-            System.out.println((this.getOwner()));
+            //System.out.println(this.isTame());
+            //System.out.println((this.getOwner()));
 
-            if (this.isTame() && this.isOwnedBy(pPlayer) && pPlayer.isCrouching()) {
+            if (this.isTame() && this.isOwnedBy(pPlayer) && pPlayer.isCrouching() && !this.isInWaterOrBubble()) {
                 //if the owner is holding a non - food item whilst shifting, cycle through its behaviour
+                //can't do it if it's swimming, swimming steelgores always follow the player
                 this.cycleBehaviour();
-                System.out.println(this.getBehaviour());
+                //System.out.println(this.getBehaviour());
                 return InteractionResult.sidedSuccess(this.level().isClientSide);
             }
         }
@@ -309,22 +325,105 @@ public class SteelgoreEntity extends UpdraftDragon {
         return 4;
     }
 
+    public void switchAnimationState() {
+        //method ran per - tick to assert which animation a dragon ought to play
+        //serverside only, ran to guarantee checkAnimationState works
+        if (this.isStunned()) {
+            this.entityData.set(ANIMATION_STATE, 1);
+            //stun
+
+        } else if (this.isInWaterOrBubble()) {
+            //water anims
+
+            if (!this.isAlive()) {
+                this.entityData.set(ANIMATION_STATE, 2);
+                //water death
+
+            } else {
+                if (this.walkAnimation.isMoving()) {
+                    this.entityData.set(ANIMATION_STATE, 3);
+                    //swim
+
+                } else {
+                    //water idle
+                    this.entityData.set(ANIMATION_STATE, 4);
+                }
+            }
+
+
+        } else if (this.isFallFlying()){
+            //flying anims
+
+            if (!this.isAlive()) {
+                this.entityData.set(ANIMATION_STATE, 5);
+                //air death
+
+            } else {
+                if (this.walkAnimation.isMoving()) {
+
+                    if (this.isDiving()) {
+                        this.entityData.set(ANIMATION_STATE, 6);
+                        //dive
+
+                    } else {
+                        this.entityData.set(ANIMATION_STATE, 7);
+                        //fly
+                    }
+
+                } else {
+                    //air idle
+                    this.entityData.set(ANIMATION_STATE, 8);
+                }
+            }
+
+        } else {
+            //land anims
+
+            if (!this.isAlive()) {
+                this.entityData.set(ANIMATION_STATE, 9);
+                //land death
+
+            } else {
+                if (this.isOrderedToSit()) {
+                    this.entityData.set(ANIMATION_STATE, 10);
+                    //sit
+
+                } else if (this.walkAnimation.isMoving()) {
+                    this.entityData.set(ANIMATION_STATE, 11);
+                    //walk
+
+                } else {
+                    //idle
+                    this.entityData.set(ANIMATION_STATE, 12);
+                }
+            }
+
+        }
+    }
+
     @Override
     public void checkAnimationState() {
-        //walking
-        this.stunAnimationState.animateWhen(this.isAlive() && !this.walkAnimation.isMoving() && !this.isInWaterOrBubble() && !this.isFallFlying() && this.isStunned(), this.tickCount);
-        this.sitAnimationState.animateWhen(this.isAlive() && !this.walkAnimation.isMoving() && !this.isInWaterOrBubble() && !this.isFallFlying() && this.isOrderedToSit() && !this.isStunned(), this.tickCount);
-        this.idleAnimationState.animateWhen(this.isAlive() && !this.walkAnimation.isMoving() && !this.isInWaterOrBubble() && !this.isFallFlying() && !this.isOrderedToSit() && !this.isStunned(), this.tickCount);
-        this.walkAnimationState.animateWhen(this.isAlive() && this.walkAnimation.isMoving() && !this.isInWaterOrBubble() && !this.isFallFlying(), this.tickCount);
+        int animState = this.entityData.get(ANIMATION_STATE);
+
+        //stunned
+        this.stunAnimationState.animateWhen(animState == 1, this.tickCount);
 
         //swimming
-        this.waterIdleAnimationState.animateWhen(this.isAlive() && this.walkAnimation.isMoving() && this.isInWaterOrBubble() && !this.isFallFlying(), this.tickCount);
-        this.swimAnimationState.animateWhen(this.isAlive() && this.walkAnimation.isMoving() && this.isInWaterOrBubble() && !this.isFallFlying(), this.tickCount);
+        this.dieWaterAnimationState.animateWhen(animState == 2, this.tickCount);
+        this.swimAnimationState.animateWhen(animState == 3, this.tickCount);
+        this.waterIdleAnimationState.animateWhen(animState == 4, this.tickCount);
 
         //flying
-        this.airIdleAnimationState.animateWhen(this.isAlive() && this.walkAnimation.isMoving() && this.isFallFlying(), this.tickCount);
-        this.flyAnimationState.animateWhen(this.isAlive() && this.walkAnimation.isMoving() && !isDiving() && this.isFallFlying(), this.tickCount);
-        this.diveAnimationState.animateWhen(this.isAlive() && this.walkAnimation.isMoving() && isDiving() && this.isFallFlying(), this.tickCount);
+        this.dieAirAnimationState.animateWhen(animState == 5, this.tickCount);
+        this.diveAnimationState.animateWhen(animState == 6, this.tickCount);
+        this.flyAnimationState.animateWhen(animState == 7, this.tickCount);
+        this.airIdleAnimationState.animateWhen(animState == 8, this.tickCount);
+
+        //walking
+        this.dieAnimationState.animateWhen(animState == 9, this.tickCount);
+        this.sitAnimationState.animateWhen(animState == 10, this.tickCount);
+        this.walkAnimationState.animateWhen(animState == 11, this.tickCount);
+        this.idleAnimationState.animateWhen(animState == 12, this.tickCount);
 
         //attacking
         this.goreAnimationState.animateWhen(this.isAlive() && this.getAttackState() == 1, this.tickCount);
@@ -333,8 +432,8 @@ public class SteelgoreEntity extends UpdraftDragon {
         this.roarAnimationState.animateWhen(!this.isAlive() && this.getAttackState() == 4, this.tickCount);
 
         //special
-        this.shakeAnimationState.animateWhen(!this.isAlive() && this.justGotOutOfWater(), this.tickCount);
-        this.shakeAnimationState.animateWhen(!this.isAlive() && this.isEating(), this.tickCount);
+        this.shakeAnimationState.animateWhen(this.isAlive() && this.justGotOutOfWater(), this.tickCount);
+        this.feedAnimationState.animateWhen(this.isAlive() && this.isEating(), this.tickCount);
 
         //death
         this.dieAnimationState.animateWhen(!this.isAlive() && !this.isInWaterOrBubble(), this.tickCount);

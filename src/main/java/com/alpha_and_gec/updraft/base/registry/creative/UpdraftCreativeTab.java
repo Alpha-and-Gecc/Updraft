@@ -24,6 +24,10 @@ public class UpdraftCreativeTab {
 
                         pOutput.accept(UpdraftItems.STEELGORE_SPAWN_EGG.get());
                         pOutput.accept(UpdraftItems.WYRMBLOOD.get());
+                        pOutput.accept(UpdraftItems.WYRMWOUND_POTION.get());
+                        pOutput.accept(UpdraftItems.WYRMSBANITE_INGOT.get());
+                        pOutput.accept(UpdraftItems.RAW_WYRMSBANITE.get());
+                        pOutput.accept(UpdraftItems.DRAKESCALE.get());
                     })
                     .build());
 

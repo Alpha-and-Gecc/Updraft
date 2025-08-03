@@ -18,7 +18,7 @@ public class UpdraftEntities {
     public static final RegistryObject<EntityType<SteelgoreEntity>> STEELGORE =
             ENTITY_TYPES.register("steelgore",
                     () -> EntityType.Builder.of(SteelgoreEntity::new, MobCategory.CREATURE)
-                            .sized(3.5f, 3f)
+                            .sized(3f, 3f)
                             .clientTrackingRange(10)
                             .build(new ResourceLocation(Updraft.MOD_ID, "steelgore").toString()));
 

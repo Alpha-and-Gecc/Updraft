@@ -6,6 +6,7 @@
     "minecraft:sunflower_plains",
     "minecraft:savanna",
     "minecraft:savanna_plateau",
+    "minecraft:sparse_jungle",
     "minecraft:wooded_badlands"
   ],
   "spawners" : {

@@ -1,19 +1,29 @@
 package com.alpha_and_gec.updraft.base.common.entities.base;
 
+import com.alpha_and_gec.updraft.base.common.entities.SteelgoreEntity;
 import com.alpha_and_gec.updraft.base.util.IKSolver;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
-public class UpdraftDragon extends TamableAnimal {
-    private int tamedBehaviourState = 0;
+public abstract class UpdraftDragon extends TamableAnimal {
+    public static final EntityDataAccessor<Integer> ANIMATION_STATE = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.INT);
+    public static final EntityDataAccessor<Integer> ATTACK_STATE = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.INT);
+    //states determining which animation this beast should play
+
+    private static final EntityDataAccessor<Integer> BEHAVIOUR_STATE = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.INT);
     //0 = wander
     //1 = sit
     //2 = follow
@@ -24,8 +34,6 @@ public class UpdraftDragon extends TamableAnimal {
     public IKSolver tailKinematics;
 
     public boolean flightState = false;
-    public int attackState = 0;
-    //state determining which animation this beast should play
 
     public boolean contactDmg = false;
 
@@ -37,6 +45,13 @@ public class UpdraftDragon extends TamableAnimal {
 
     protected UpdraftDragon(EntityType<? extends TamableAnimal> p_30341_, Level p_30342_) {
         super(p_30341_, p_30342_);
+    }
+
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(ANIMATION_STATE, 1);
+        this.entityData.define(ATTACK_STATE, 0);
+        this.entityData.define(BEHAVIOUR_STATE, 0);
     }
 
     @Override
@@ -62,6 +77,8 @@ public class UpdraftDragon extends TamableAnimal {
 
         if (this.level().isClientSide()){
             this.checkAnimationState();
+        } else {
+            this.switchAnimationState();
         }
     }
 
@@ -91,6 +108,11 @@ public class UpdraftDragon extends TamableAnimal {
         //method ran per - tick to assert which animation a dragon ought to play
     }
 
+    public void switchAnimationState() {
+        //method ran per - tick to assert which animation a dragon ought to play
+        //serverside only, ran to guarantee checkAnimationState works
+    }
+
 
     public boolean justGotOutOfWater() {
         //check when was the last time the dragon touched water
@@ -113,11 +135,11 @@ public class UpdraftDragon extends TamableAnimal {
     }
 
     public void setAttackState(int state) {
-        this.attackState = state;
+        this.entityData.set(ATTACK_STATE, state);
     }
 
     public int getAttackState() {
-        return this.attackState;
+        return this.entityData.get(ATTACK_STATE);
     }
 
     public void setCanContactDamage(boolean state) {
@@ -146,11 +168,11 @@ public class UpdraftDragon extends TamableAnimal {
     }
 
     public void setBehaviour(int state) {
-        this.tamedBehaviourState = state;
+        this.entityData.set(BEHAVIOUR_STATE, state);
     }
 
     public void cycleBehaviour() {
-        switch (this.tamedBehaviourState) {
+        switch (this.entityData.get(BEHAVIOUR_STATE)) {
             case 0 -> this.sit();
             case 1 -> this.follow();
             case 2 -> this.wander();
@@ -177,7 +199,7 @@ public class UpdraftDragon extends TamableAnimal {
     }
 
     public int getBehaviour() {
-        return this.tamedBehaviourState;
+        return this.entityData.get(BEHAVIOUR_STATE);
     }
 
     public boolean isWandering() {

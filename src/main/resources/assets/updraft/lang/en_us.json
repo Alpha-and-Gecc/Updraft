@@ -3,6 +3,13 @@
 
   "entity.updraft.steelgore": "Smouldering Steelgore",
 
+  "item.updraft.steelgore_spawn_egg": "Smouldering Steelgore Spawn Egg",
+
   "item.updraft.wyrmblood": "Bottle of Wyrmblood",
-  "item.updraft.steelgore_spawn_egg": "Smouldering Steelgore Spawn Egg"
+  "item.updraft.drakescale": "Drakescale",
+
+  "item.updraft.wyrmwound_potion": "Wyrmwound Potion",
+
+  "item.updraft.raw_wyrmsbanite": "Raw Wyrmsbanite",
+  "item.updraft.wyrmsbanite_ingot": "Wyrmsbanite Ingot"
 }
