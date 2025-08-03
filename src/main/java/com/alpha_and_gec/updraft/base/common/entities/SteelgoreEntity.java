@@ -296,13 +296,13 @@ public class SteelgoreEntity extends UpdraftDragon {
     }
 
     public static boolean checkSteelgoreSpawnRules(EntityType<SteelgoreEntity> entityType, LevelAccessor level, MobSpawnType spawnType, BlockPos position, RandomSource rand) {
-        Holder<Biome> holder = level.getBiome(position);
+        return level.getBlockState(position.below()).is(BlockTags.ANIMALS_SPAWNABLE_ON) && isBrightEnoughToSpawn(level, position);
+        //note that steelgores, like all other plains grazers, cannot spawn at night.
+    }
 
-        //if (!holder.is(BiomeTags.POLAR_BEARS_SPAWN_ON_ALTERNATE_BLOCKS)) {
-            return checkAnimalSpawnRules(entityType, level, spawnType, position, rand);
-        //} else {
-            //return isBrightEnoughToSpawn(level, position) && level.getBlockState(position.below()).is(UpdraftTags.STEELGORE_SPAWNABLE_BLOCKS);
-        //}
+    @Override
+    public int getMaxSpawnClusterSize() {
+        return 1;
     }
 
     public int getVariant() {
