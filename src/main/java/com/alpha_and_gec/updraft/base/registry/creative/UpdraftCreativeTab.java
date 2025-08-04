@@ -22,12 +22,21 @@ public class UpdraftCreativeTab {
                     .title(Component.translatable("creativetab.updraft_tab"))
                     .displayItems((pParameters, pOutput) -> {
 
+                        //Spawn eggs
                         pOutput.accept(UpdraftItems.STEELGORE_SPAWN_EGG.get());
+
+                        //Mob drops
                         pOutput.accept(UpdraftItems.WYRMBLOOD.get());
-                        pOutput.accept(UpdraftItems.WYRMWOUND_POTION.get());
+                        pOutput.accept(UpdraftItems.DRAKESCALE.get());
+                        pOutput.accept(UpdraftItems.STEELGORE_CARAPACE.get());
+
+                        //Wyrmsbanite stuff
                         pOutput.accept(UpdraftItems.WYRMSBANITE_INGOT.get());
                         pOutput.accept(UpdraftItems.RAW_WYRMSBANITE.get());
-                        pOutput.accept(UpdraftItems.DRAKESCALE.get());
+
+                        //Potions
+                        pOutput.accept(UpdraftItems.WYRMWOUND_POTION.get());
+
                     })
                     .build());
 

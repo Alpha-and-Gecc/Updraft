@@ -85,6 +85,8 @@ public class SteelgoreEntity extends UpdraftDragon {
         this.tailKinematics = new IKSolver(this, 6, 2, 1, 0.75, 2, false, true);
         this.setMeleeRadius(3.5f);
         this.setMaxUpStep(1);
+        this.maxLootAmount = 6;
+        this.lootAmount = 6;
     }
 
     @Nullable
@@ -122,6 +124,7 @@ public class SteelgoreEntity extends UpdraftDragon {
         if (this.isStunned()) {
             this.getNavigation().stop();
             this.setTarget(null);
+            this.setDeltaMovement(Vec3.ZERO);
             //System.out.println("stun");
         }
 
@@ -134,10 +137,15 @@ public class SteelgoreEntity extends UpdraftDragon {
         super.tick();
     }
 
-    public void travel(Vec3 travelVector) {
-        if (!this.isStunned()) {
-            super.travel(travelVector);
-        }
+    @Override
+    public void tickCDs() {
+        //method ran per - tick to tick down cooldowns
+        super.tickCDs();
+
+        this.chargeCD = Math.max(0, chargeCD - 1);
+        this.goreCD = Math.max(0, goreCD - 1);
+        this.roarCD = Math.max(0, breathCharge - 1);
+        this.breathCharge = Math.max(0, breathCharge - 1);
     }
 
     @Override
@@ -298,17 +306,6 @@ public class SteelgoreEntity extends UpdraftDragon {
         }
 
         return super.mobInteract(pPlayer, pHand);
-    }
-
-    @Override
-    public void tickCDs() {
-        //method ran per - tick to tick down cooldowns
-        super.tickCDs();
-
-        this.chargeCD = Math.max(0, chargeCD - 1);
-        this.goreCD = Math.max(0, goreCD - 1);
-        this.roarCD = Math.max(0, breathCharge - 1);
-        this.breathCharge = Math.max(0, breathCharge - 1);
     }
 
     public static boolean checkSteelgoreSpawnRules(EntityType<SteelgoreEntity> entityType, LevelAccessor level, MobSpawnType spawnType, BlockPos position, RandomSource rand) {

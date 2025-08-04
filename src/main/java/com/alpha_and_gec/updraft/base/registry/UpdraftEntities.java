@@ -20,6 +20,7 @@ public class UpdraftEntities {
                     () -> EntityType.Builder.of(SteelgoreEntity::new, MobCategory.CREATURE)
                             .sized(3f, 3f)
                             .clientTrackingRange(10)
+                            .fireImmune()
                             .build(new ResourceLocation(Updraft.MOD_ID, "steelgore").toString()));
 
 

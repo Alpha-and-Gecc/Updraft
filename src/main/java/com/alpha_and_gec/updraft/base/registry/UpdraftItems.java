@@ -21,10 +21,11 @@ public class UpdraftItems {
     //Mob drops
     public static final RegistryObject<Item> WYRMBLOOD = ITEMS.register("wyrmblood", () -> new Item(new Item.Properties().stacksTo(16)));
     public static final RegistryObject<Item> DRAKESCALE = ITEMS.register("drakescale", () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STEELGORE_CARAPACE = ITEMS.register("steelgore_carapace", () -> new Item(new Item.Properties()));
 
     //Ores and ingots
     public static final RegistryObject<Item> WYRMSBANITE_INGOT = ITEMS.register("wyrmsbanite_ingot", () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> RAW_WYRMSBANITE = ITEMS.register("raw_wyrmsbanite", () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> RAW_WYRMSBANITE = ITEMS.register("wyrmsbanite_alloy", () -> new Item(new Item.Properties()));
 
     //Potions
     public static final RegistryObject<Item> WYRMWOUND_POTION = ITEMS.register("wyrmwound_potion", () -> new PotionItem(new Item.Properties().stacksTo(16)));

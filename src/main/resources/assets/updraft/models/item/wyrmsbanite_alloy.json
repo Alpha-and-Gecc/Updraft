@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "updraft:item/raw_wyrmsbanite"
+    "layer0": "updraft:item/wyrmsbanite_alloy"
   }
 }
