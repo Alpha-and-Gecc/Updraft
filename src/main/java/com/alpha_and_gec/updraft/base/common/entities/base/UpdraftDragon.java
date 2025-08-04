@@ -3,9 +3,14 @@ package com.alpha_and_gec.updraft.base.common.entities.base;
 import com.alpha_and_gec.updraft.base.common.entities.SteelgoreEntity;
 import com.alpha_and_gec.updraft.base.registry.UpdraftItems;
 import com.alpha_and_gec.updraft.base.util.IKSolver;
+import com.mojang.serialization.DataResult;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.commands.arguments.ResourceArgument;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -17,6 +22,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.behavior.Mount;
@@ -55,7 +61,7 @@ public class UpdraftDragon extends TamableAnimal {
     public DamageSource deathDamageSource;
 
     public float lootAmount = 0;
-    public float maxLootAmount = 0;
+    public static float maxLootAmount = 0;
 
     private boolean selfFriendly = false;
     //^do NOT edit this variable outside of the constructor
@@ -66,10 +72,10 @@ public class UpdraftDragon extends TamableAnimal {
 
     public boolean contactDmg = false;
 
-    public float meleeRadius = 3.5F;
+    public static float meleeRadius = 3.5F;
 
     public int wetness = 0;
-    public int wetlim = 100;
+    public static int wetlim = 100;
     //how many ticks does it take to dry
 
     protected UpdraftDragon(EntityType<? extends TamableAnimal> p_30341_, Level p_30342_) {
@@ -83,6 +89,27 @@ public class UpdraftDragon extends TamableAnimal {
         this.entityData.define(BEHAVIOUR_STATE, 0);
         this.entityData.define(IS_PINNED, false);
     }
+
+    public void addAdditionalSaveData(CompoundTag pCompound) {
+        pCompound.putBoolean("FlightState", this.flightState);
+        pCompound.putFloat("LootAmount", this.getLootAmount());
+        pCompound.putBoolean("SelfFriendly", this.isSelfFriendly());
+        pCompound.putInt("Wetness", this.wetness);
+        pCompound.putBoolean("ContactDmg", this.canContactDamage());
+
+        super.addAdditionalSaveData(pCompound);
+    }
+
+    public void readAdditionalSaveData(CompoundTag pCompound) {
+        this.setLootAmount(pCompound.getFloat("LootAmount"));
+        this.setSelfFriendly(pCompound.getBoolean("SelfFriendly"));
+        this.setCanContactDamage(pCompound.getBoolean("ContactDmg"));
+        this.wetness = pCompound.getInt("Wetness");
+        this.flightState = pCompound.getBoolean("FlightState");
+
+        super.readAdditionalSaveData(pCompound);
+    }
+
 
     @Override
     public @Nullable AgeableMob getBreedOffspring(ServerLevel p_146743_, AgeableMob p_146744_) {

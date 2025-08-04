@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.PotionItem;
 import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.item.SplashPotionItem;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -28,7 +29,7 @@ public class UpdraftItems {
     public static final RegistryObject<Item> RAW_WYRMSBANITE = ITEMS.register("wyrmsbanite_alloy", () -> new Item(new Item.Properties()));
 
     //Potions
-    public static final RegistryObject<Item> WYRMWOUND_POTION = ITEMS.register("wyrmwound_potion", () -> new PotionItem(new Item.Properties().stacksTo(16)));
+    public static final RegistryObject<Item> WYRMWOUND_POTION = ITEMS.register("wyrmwound_potion", () -> new SplashPotionItem(new Item.Properties().stacksTo(16)));
 
     //Spawn eggs
     public static final RegistryObject<Item> STEELGORE_SPAWN_EGG = ITEMS.register("steelgore_spawn_egg",

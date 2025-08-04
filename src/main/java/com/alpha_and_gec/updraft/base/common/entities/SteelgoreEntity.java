@@ -6,7 +6,11 @@ import com.alpha_and_gec.updraft.base.common.entities.goals.Steelgore.SteelgoreA
 import com.alpha_and_gec.updraft.base.registry.UpdraftEntities;
 import com.alpha_and_gec.updraft.base.registry.UpdraftTags;
 import com.alpha_and_gec.updraft.base.util.IKSolver;
+import com.mojang.serialization.Dynamic;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
@@ -14,6 +18,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -30,6 +35,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.scores.PlayerTeam;
 
 import javax.annotation.Nullable;
 
@@ -61,20 +67,20 @@ public class SteelgoreEntity extends UpdraftDragon {
 
     public double chargeCD;
     //cooldown for charge attack, only usable if it is at 0
-    public final double chargeCap = 100;
+    public static final double chargeCap = 100;
 
     public double goreCD;
     //cooldown for gore attack, only usable if it is at 0
-    public final double goreCap = 20;
+    public static final double goreCap = 20;
 
     public double breathCharge;
     //cooldown for breath usage, this is unique in that as long as it is below cap the breath charge can be used, and each tick of usage increases the cooldown up to the cap
     //this represents how many ticks it can breath fire for
-    public final double breathCap = 60;
+    public static final double breathCap = 60;
 
     public double roarCD;
     //cooldown for roaring, ONLY APPLIES TO WILD
-    public final double roarCap = 3600;
+    public static final double roarCap = 3600;
 
 
     public boolean isStunned = false;
@@ -118,6 +124,27 @@ public class SteelgoreEntity extends UpdraftDragon {
                 .add(Attributes.ATTACK_KNOCKBACK, 5D)
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
                 .add(Attributes.FOLLOW_RANGE, 40.0D);
+    }
+
+    public void addAdditionalSaveData(CompoundTag pCompound) {
+        pCompound.putBoolean("Stunned", this.isStunned());
+        pCompound.putDouble("ChargeCooldown", this.chargeCD);
+        pCompound.putDouble("GoreCooldown", this.goreCD);
+        pCompound.putDouble("BreathCharge", this.breathCharge);
+        pCompound.putDouble("RoarCooldown", this.roarCD);
+
+        super.addAdditionalSaveData(pCompound);
+    }
+
+    public void readAdditionalSaveData(CompoundTag pCompound) {
+        this.setAbsorptionAmount(pCompound.getFloat("AbsorptionAmount"));
+        this.chargeCD = pCompound.getDouble("ChargeCooldown");
+        this.goreCD = pCompound.getDouble("GoreCooldown");
+        this.breathCharge = pCompound.getDouble("BreathCharge");
+        this.roarCD = pCompound.getDouble("RoarCooldown");
+        this.isStunned = pCompound.getBoolean("Stunned");
+
+        super.readAdditionalSaveData(pCompound);
     }
 
     public void tick() {
@@ -186,7 +213,7 @@ public class SteelgoreEntity extends UpdraftDragon {
             }
             //breaks the falling anvil entity and deflects the dropped anvil item away
 
-            System.out.println(m.getDeltaMovement());
+            //System.out.println(m.getDeltaMovement());
             return super.hurt(pSource, pAmount/5);
 
         } else {
@@ -197,7 +224,7 @@ public class SteelgoreEntity extends UpdraftDragon {
 
     @Override
     public void push (Entity pEntity) {
-        System.out.println(pEntity);
+        //System.out.println(pEntity);
 
         if (this.canContactDamage() && this.getTarget() != null) {
             pEntity.hurt(this.damageSources().mobAttack(this), (float) (this.getAttribute(Attributes.ATTACK_DAMAGE).getValue() * 3));
@@ -205,7 +232,7 @@ public class SteelgoreEntity extends UpdraftDragon {
             if (pEntity instanceof LivingEntity liver) {
                 Vec3 dirDiff = this.position().subtract(pEntity.position()).normalize();
                 liver.knockback(this.getAttributeValue(Attributes.ATTACK_KNOCKBACK), dirDiff.x, dirDiff.z);
-                liver.setDeltaMovement(liver.getDeltaMovement().add(0, this.getAttributeValue(Attributes.ATTACK_KNOCKBACK) * 0.1, 0));
+                liver.setDeltaMovement(liver.getDeltaMovement().add(0, this.getAttributeValue(Attributes.ATTACK_KNOCKBACK) * 0.3, 0));
                 //yes I know vertical knockback is not proportional to horizontal knockback, it looks funnier
             }
         } else {
@@ -225,7 +252,7 @@ public class SteelgoreEntity extends UpdraftDragon {
 
         int rng = random.nextInt(0, 100);
 
-        if (rng < amount/2 && !futureOwner.level().isClientSide()) {
+        if (rng < amount && !futureOwner.level().isClientSide()) {
             this.tame(futureOwner);
             this.unstun();
             this.level().broadcastEntityEvent(this, (byte)7);
@@ -325,7 +352,7 @@ public class SteelgoreEntity extends UpdraftDragon {
     public void switchAnimationState() {
         //method ran per - tick to assert which animation a dragon ought to play
         //serverside only, ran to guarantee checkAnimationState works
-        if (this.isStunned()) {
+        if (this.isStunned() && !this.isDeadOrDying()) {
             this.entityData.set(ANIMATION_STATE, 1);
             //stun
 

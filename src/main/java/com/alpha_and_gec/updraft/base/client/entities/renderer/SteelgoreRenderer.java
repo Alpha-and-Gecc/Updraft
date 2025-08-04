@@ -2,22 +2,20 @@ package com.alpha_and_gec.updraft.base.client.entities.renderer;
 
 import com.alpha_and_gec.updraft.base.Updraft;
 import com.alpha_and_gec.updraft.base.client.entities.model.SteelgoreModel;
+import com.alpha_and_gec.updraft.base.client.entities.renderer.base.UpdraftDragonRenderer;
 import com.alpha_and_gec.updraft.base.common.entities.SteelgoreEntity;
 import com.alpha_and_gec.updraft.base.registry.UpdraftLayers;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.animal.Fox;
+import net.minecraft.world.entity.Mob;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 @OnlyIn(Dist.CLIENT)
-public class SteelgoreRenderer extends MobRenderer<SteelgoreEntity, SteelgoreModel<SteelgoreEntity>> {
+public class SteelgoreRenderer<T extends Mob, M extends EntityModel<T>> extends UpdraftDragonRenderer<SteelgoreEntity, SteelgoreModel<SteelgoreEntity>> {
 
     private static final ResourceLocation STEELGORE_BARIOTH = new ResourceLocation(Updraft.MOD_ID,"textures/entity/steelgore/steelgore_barioth.png");
     private static final ResourceLocation STEELGORE_SILVERASH = new ResourceLocation(Updraft.MOD_ID, "textures/entity/steelgore/steelgore_silverash.png");
@@ -42,7 +40,7 @@ public class SteelgoreRenderer extends MobRenderer<SteelgoreEntity, SteelgoreMod
 
     }
 
-    public ResourceLocation getTextureLocation(SteelgoreEntity entity) {
+    public @NotNull ResourceLocation getTextureLocation(SteelgoreEntity entity) {
         return switch (entity.getVariant()) {
             case 0 -> STEELGORE_BARIOTH;
             case 1 -> STEELGORE_SILVERASH;
