@@ -108,7 +108,7 @@ public abstract class UpdraftDragonRenderer<T extends Mob, M extends EntityModel
         if (rendertype != null) {
             VertexConsumer vertexconsumer = pBuffer.getBuffer(rendertype);
             int i = getOverlayCoordsDragon(pEntity, this.getWhiteOverlayProgress(pEntity, pPartialTicks));
-            System.out.println(i);
+            //System.out.println(i);
             this.model.renderToBuffer(pPoseStack, vertexconsumer, pPackedLight, i, 1.0F, 1.0F, 1.0F, flag1 ? 0.15F : 1.0F);
         }
 

@@ -4,13 +4,16 @@ import com.alpha_and_gec.updraft.base.Updraft;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 
 public class UpdraftTags {
+
     public static final TagKey<Item> STEELGORE_DIET = registerItemTag("steelgore_diet");
+    public static final TagKey<EntityType<?>> STEELGORE_INTOLERANT = registerEntityTag("steelgore_intolerant");
 
     private static TagKey<Block> registerBlockTag(String name) {
         return TagKey.create(Registries.BLOCK, new ResourceLocation(Updraft.MOD_ID, name));

@@ -8,21 +8,29 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.AbstractIllager;
+import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.EnumSet;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 public class SteelgoreAttackGoal extends BaseAttackGoal {
 
+    private final Predicate<Entity> NOT_A_STEELGORE = (p_33346_) -> p_33346_.isAlive() && !(p_33346_ instanceof SteelgoreEntity) && this.selfFriendly;
+
     public Vec3 chargeMotion;
+
+    public boolean selfFriendly = true;
 
     protected final SteelgoreEntity creature;
 
     public SteelgoreAttackGoal(SteelgoreEntity beast) {
         super(beast);
         this.creature = beast;
+        this.selfFriendly = beast.isSelfFriendly();
     }
 
     @Override
@@ -55,28 +63,28 @@ public class SteelgoreAttackGoal extends BaseAttackGoal {
     }
 
     protected void switchAttack(double distance) {
-        int attackRNG = creature.getRandom().nextInt(0, 100);
+        //int attackRNG = creature.getRandom().nextInt(0, 100);
 
-        if (this.goalActiveTime < 10 && this.creature.roarCD == 0) {
-            this.creature.setAttackState(4);
-            //roars when starting combat
-            //can't cheese it by getting it in a roar loop nuh uh
-        }
+        if (this.creature.getAttackState() == 0) {
 
-        else if (distance <= this.creature.getMeleeRadius()) {
-            this.creature.setAttackState(1);
-            //gores when close enough
-        }
+            if (this.goalActiveTime < 20 && this.creature.roarCD == 0) {
+                this.creature.setAttackState(4);
+                //roars when starting combat
+                //can't cheese it by getting it in a roar loop nuh uh
 
-        else if (distance > this.creature.getMeleeRadius() && this.creature.chargeCD == 0 && !this.creature.isFallFlying()) {
-            this.creature.setAttackState(3);
-            //charges with priority, but cannot charge if flying
-        }
+            } else if (distance <= this.creature.getMeleeRadius()) {
+                this.creature.setAttackState(1);
+                //gores when close enough
 
-        else if (distance > this.creature.getMeleeRadius() && this.creature.breathCharge <= this.creature.breathCap && !this.creature.isUnderWater()) {
-            this.creature.setAttackState(2);
-            //whenever have breath and can't gore or charge, breath
-            //also can't breath underwater
+            } else if (distance > this.creature.getMeleeRadius() && this.creature.chargeCD == 0 && !this.creature.isFallFlying()) {
+                this.creature.setAttackState(3);
+                //charges with priority, but cannot charge if flying
+
+            } else if (distance > this.creature.getMeleeRadius() && this.creature.breathCharge <= SteelgoreEntity.breathCap && !this.creature.isUnderWater()) {
+                this.creature.setAttackState(2);
+                //whenever have breath and can't gore or charge, breath
+                //also can't breath underwater
+            }
         }
     }
 
@@ -101,7 +109,7 @@ public class SteelgoreAttackGoal extends BaseAttackGoal {
         if (this.attackTime >= 21) {
             this.attackTime = 0;
             this.creature.setAttackState(0);
-            this.creature.goreCD = this.creature.goreCap;
+            this.creature.goreCD = SteelgoreEntity.goreCap;
             this.creature.chargeCD = Math.max(0, this.creature.chargeCD - 20);
         }
     }
@@ -127,7 +135,7 @@ public class SteelgoreAttackGoal extends BaseAttackGoal {
             this.chargeMotion = new Vec3(x, this.creature.getDeltaMovement().y, z).normalize().multiply(3, 1, 3);
         }
 
-        if (this.attackTime > 10 && this.attackTime < 30) {
+        if (this.attackTime > 10 && this.attackTime < 25) {
             this.creature.setDeltaMovement(chargeMotion.x/2, this.creature.getDeltaMovement().y, chargeMotion.z/2);
             this.creature.setCanContactDamage(true);
             //Only start moving after tick 8(after it's charged up).
@@ -135,10 +143,10 @@ public class SteelgoreAttackGoal extends BaseAttackGoal {
             this.creature.setCanContactDamage(false);
         }
 
-        if (this.attackTime >= 30) {
+        if (this.attackTime >= 25) {
             this.attackTime = 0;
             this.creature.setAttackState(0);
-            this.creature.chargeCD = this.creature.chargeCap;
+            this.creature.chargeCD = SteelgoreEntity.chargeCap;
         }
     }
 
@@ -153,14 +161,21 @@ public class SteelgoreAttackGoal extends BaseAttackGoal {
         this.creature.getLookControl().setLookAt(target, 30F, 30F);
 
         if (this.attackTime == 11) {
+            System.out.println("right");
             this.creature.playSound(SoundEvents.RAVAGER_ROAR);
+
+            for(LivingEntity livingentity : this.creature.level().getEntitiesOfClass(LivingEntity.class, this.creature.getBoundingBox().inflate(4.0F), NOT_A_STEELGORE)) {
+                this.creature.knockbackFromSelf(livingentity, 1);
+                this.creature.poof(true);
+            }
+
         }
 
         if (this.attackTime >= 21) {
             //System.out.println("roarEnd");
             this.attackTime = 0;
             this.creature.setAttackState(0);
-            this.creature.roarCD = this.creature.roarCap;
+            this.creature.roarCD = SteelgoreEntity.roarCap;
         }
     }
 

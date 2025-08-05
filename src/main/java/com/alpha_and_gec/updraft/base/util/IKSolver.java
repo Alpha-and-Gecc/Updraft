@@ -1,18 +1,11 @@
 package com.alpha_and_gec.updraft.base.util;
 
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-
-import java.util.ArrayList;
-
-import static java.lang.Math.PI;
 
 public class IKSolver {
 
@@ -116,46 +109,7 @@ public class IKSolver {
         initTailPoints();
     }
 
-    public IKSolver(LivingEntity entity, int nodeCount, int nodeDist, boolean shiftNodes, boolean tailHasGravity) {
-
-        this.entity = entity;
-        this.nodeCount = nodeCount;
-        //number of nodes^
-        this.nodeDist = nodeDist;
-        //distance between each node^
-        this.nodeHitboxRadius = nodeDist - 0.2;
-        //size of the hitbox of each node
-
-        //this.bodyLength = Math.min(nodeDist, (int) (entity.getBoundingBox().getXsize()/2));
-        //Length of the body used to calculate body hitbox
-        this.nodes = new Vec3[nodeCount];
-        this.coreNodes = new Vec3[nodeCount];
-
-        //this.torsoFrontOffset = new Vec3(0, 0, -bodyLength);
-        //this.torsoBackOffset = new Vec3(0, 0, bodyLength);
-
-        this.tailYaws = new double[nodeCount];
-        this.tailPitches = new double[nodeCount];
-        this.currentTailYaws = new double[nodeCount];
-        this.currentTailPitches = new double[nodeCount];
-
-        leftRefPoint = MathHelpers.rotateAroundCenterFlatDeg(entity.position(), entity.position().subtract(leftRefOffset), (double) -entity.getYHeadRot());
-        rightRefPoint = MathHelpers.rotateAroundCenterFlatDeg(entity.position(), entity.position().subtract(rightRefOffset), (double) -entity.getYHeadRot());
-        upRefPoint = MathHelpers.rotateAroundCenterFlatDeg(entity.position(), entity.position().subtract(upRefOffset), (double) -entity.getYHeadRot());
-        downRefPoint = MathHelpers.rotateAroundCenterFlatDeg(entity.position(), entity.position().subtract(downRefOffset), (double) -entity.getYHeadRot());
-        torsoFront = MathHelpers.rotateAroundCenterFlatDeg(entity.position(), entity.position().subtract(torsoFrontOffset), (double) -entity.getYHeadRot());
-        torsoBack = MathHelpers.rotateAroundCenterFlatDeg(entity.position(), entity.position().subtract(torsoBackOffset), (double) -entity.getYHeadRot());
-
-        if (shiftNodes == true) {
-            torsoFrontOffset = new Vec3(0, -1, -1);;
-            torsoBackOffset = new Vec3(0, -1, 1);;
-            this.shiftNodes = true;
-        }
-
-        initTailPoints();
-    }
-
-    public void TakePerTickAction(LivingEntity entity) {
+    public void takePerTickAction(LivingEntity entity) {
         this.prevPos = nowPos;
         this.nowPos = this.entity.position();
 
@@ -200,21 +154,19 @@ public class IKSolver {
         nodes[0] = MathHelpers.distConstraintSingle(torsoBack, nodes[0], this.nodeDist, this.vertLimPercentage);
         float angleY = (float) (Mth.RAD_TO_DEG*MathHelpers.getAngleForLinkTopDownFlat(torsoFront, torsoBack, nodes[0], this.leftRefPoint, this.rightRefPoint));
         //float angleX = (float) (Mth.RAD_TO_DEG*MathHelpers.angleFromYdiff(torsoFront, torsoBack, nodes[0]));
-        nodes[0] = MathHelpers.quickReturn(entity.level(), torsoBack, nodes[0], angleY, this.perTickRate + 1, this.tailHasGravity, this.canReturnToCenter);
+        nodes[0] = MathHelpers.quickReturn(entity.level(), torsoBack, nodes[0], angleY, this.perTickRate + 2, this.tailHasGravity, this.canReturnToCenter);
         //return to center for first node
         nodes[0] = MathHelpers.driveAway(torsoFront, nodes[0], entity.getBoundingBox().getXsize(), false);
         nodes[0] = MathHelpers.driveAway(entity.position(), nodes[0], entity.getBoundingBox().getXsize(), false);
         nodes[0] = MathHelpers.driveAway(torsoBack, nodes[0], nodeHitboxRadius, false);
         //collision
+        //node 0 collides with the body too
 
         nodes[1] = MathHelpers.distConstraintSingle(nodes[0], nodes[1], this.nodeDist, this.vertLimPercentage);
         angleY = (float) (Mth.RAD_TO_DEG*MathHelpers.getAngleForLinkTopDownFlat(torsoBack, nodes[0], nodes[1], this.leftRefPoint, this.rightRefPoint));
         //angleX = (float) (Mth.RAD_TO_DEG*MathHelpers.angleFromYdiff(torsoBack, nodes[0], nodes[1]));
-        nodes[1] = MathHelpers.quickReturn(entity.level(), nodes[0], nodes[1], angleY, this.perTickRate + 2, this.tailHasGravity, this.canReturnToCenter);
+        nodes[1] = MathHelpers.quickReturn(entity.level(), nodes[0], nodes[1], angleY, this.perTickRate + 1, this.tailHasGravity, this.canReturnToCenter);
         //return to center
-        nodes[1] = MathHelpers.driveAway(torsoFront, nodes[1], entity.getBoundingBox().getXsize(), false);
-        nodes[1] = MathHelpers.driveAway(entity.position(), nodes[1], entity.getBoundingBox().getXsize(), false);
-        nodes[1] = MathHelpers.driveAway(torsoBack, nodes[1], nodeHitboxRadius, false);
         nodes[1] = MathHelpers.driveAway(nodes[0], nodes[1], nodeHitboxRadius, false);
         //collision
 
@@ -226,15 +178,9 @@ public class IKSolver {
 
             angleY = (float) (Mth.RAD_TO_DEG*MathHelpers.getAngleForLinkTopDownFlat(nodes[i - 2], nodes[i - 1], nodes[i], this.leftRefPoint, this.rightRefPoint));
             //angleX = (float) (Mth.RAD_TO_DEG*MathHelpers.angleFromYdiff(nodes[i - 2], nodes[i - 1], nodes[i]));
-            nodes[i] = MathHelpers.quickReturn(entity.level(), nodes[i - 1], nodes[i], angleY, this.perTickRate + 2, this.tailHasGravity, this.canReturnToCenter);
+            nodes[i] = MathHelpers.quickReturn(entity.level(), nodes[i - 1], nodes[i], angleY, this.perTickRate, this.tailHasGravity, this.canReturnToCenter);
             //return to center
-
-            nodes[i] = MathHelpers.driveAway(torsoFront, nodes[i], entity.getBoundingBox().getXsize(), false);
-            nodes[i] = MathHelpers.driveAway(entity.position(), nodes[i], entity.getBoundingBox().getXsize(), false);
-            nodes[i] = MathHelpers.driveAway(torsoBack, nodes[i], nodeHitboxRadius, false);
-            for (int x = 0; i < i; i++) {
-                nodes[i] = MathHelpers.driveAway(nodes[x], nodes[i], nodeHitboxRadius, false);
-            }
+            nodes[i] = MathHelpers.driveAway(nodes[i - 1], nodes[i], nodeHitboxRadius, false);
             //collision
 
         }

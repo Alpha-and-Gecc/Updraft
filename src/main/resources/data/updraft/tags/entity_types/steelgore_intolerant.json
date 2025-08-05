@@ -1,0 +1,13 @@
+{
+  "values": [
+    "minecraft:player",
+    "minecraft:pillager",
+    "minecraft:vindicator",
+    "minecraft:evoker",
+    "minecraft:iron_golem",
+    "minecraft:snow_golem",
+    "minecraft:ravager",
+    "minecraft:piglin",
+    "minecraft:piglin_brute"
+  ]
+}

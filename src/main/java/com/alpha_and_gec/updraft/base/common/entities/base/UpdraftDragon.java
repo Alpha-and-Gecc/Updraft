@@ -1,51 +1,42 @@
 package com.alpha_and_gec.updraft.base.common.entities.base;
 
-import com.alpha_and_gec.updraft.base.common.entities.SteelgoreEntity;
 import com.alpha_and_gec.updraft.base.registry.UpdraftItems;
 import com.alpha_and_gec.updraft.base.util.IKSolver;
-import com.mojang.serialization.DataResult;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.commands.arguments.ResourceArgument;
-import net.minecraft.core.registries.Registries;
+import com.alpha_and_gec.updraft.base.util.MathHelpers;
+import com.google.common.collect.UnmodifiableIterator;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.*;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageSources;
-import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.behavior.Mount;
-import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.vehicle.DismountHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class UpdraftDragon extends TamableAnimal {
+public class UpdraftDragon extends TamableAnimal implements Saddleable{
     public static final EntityDataAccessor<Integer> ANIMATION_STATE = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.INT);
     public static final EntityDataAccessor<Integer> ATTACK_STATE = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.INT);
     //states determining which animation this beast should play
@@ -58,10 +49,16 @@ public class UpdraftDragon extends TamableAnimal {
     private static final EntityDataAccessor<Boolean> IS_PINNED = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.BOOLEAN);
     //I made this a synchedData because it's important to stop the player from carving pinned dragons
 
+    public SimpleContainer inventory;
+
+    public int inventorySize;
+
+    public LazyOptional<?> itemHandler = null;
+
     public DamageSource deathDamageSource;
 
     public float lootAmount = 0;
-    public static float maxLootAmount = 0;
+    public float maxLootAmount = 0;
 
     private boolean selfFriendly = false;
     //^do NOT edit this variable outside of the constructor
@@ -72,10 +69,13 @@ public class UpdraftDragon extends TamableAnimal {
 
     public boolean contactDmg = false;
 
-    public static float meleeRadius = 3.5F;
+    public float meleeRadius = 3.5F;
+
+    public float turnSpeed = 0.1F;
+    //Number between 0 and 1
 
     public int wetness = 0;
-    public static int wetlim = 100;
+    public int wetlim = 100;
     //how many ticks does it take to dry
 
     protected UpdraftDragon(EntityType<? extends TamableAnimal> p_30341_, Level p_30342_) {
@@ -96,6 +96,8 @@ public class UpdraftDragon extends TamableAnimal {
         pCompound.putBoolean("SelfFriendly", this.isSelfFriendly());
         pCompound.putInt("Wetness", this.wetness);
         pCompound.putBoolean("ContactDmg", this.canContactDamage());
+        pCompound.putInt("InvSize", this.inventorySize);
+        pCompound.putFloat("TurnSpeed", this.turnSpeed);
 
         super.addAdditionalSaveData(pCompound);
     }
@@ -106,6 +108,8 @@ public class UpdraftDragon extends TamableAnimal {
         this.setCanContactDamage(pCompound.getBoolean("ContactDmg"));
         this.wetness = pCompound.getInt("Wetness");
         this.flightState = pCompound.getBoolean("FlightState");
+        this.inventorySize = pCompound.getInt("InvSize");
+        this.turnSpeed = pCompound.getFloat("TurnSpeed");
 
         super.readAdditionalSaveData(pCompound);
     }
@@ -149,7 +153,9 @@ public class UpdraftDragon extends TamableAnimal {
     public void tick() {
         super.tick();
 
-        this.tailKinematics.TakePerTickAction(this);
+        if (this.tailKinematics != null) {
+            this.tailKinematics.takePerTickAction(this);
+        }
         this.tickCDs();
 
         if (this.isInWaterRainOrBubble()) {
@@ -217,6 +223,27 @@ public class UpdraftDragon extends TamableAnimal {
         }
         return super.interactAt(pPlayer, vec, hand);
     }
+
+    public InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
+        if (!this.isVehicle() && !this.isBaby() && this.isTame()) {
+                ItemStack itemstack = pPlayer.getItemInHand(pHand);
+
+                if (!itemstack.isEmpty()) {
+                    //uhh interact with the item in hand before riding
+                    InteractionResult interactionresult = itemstack.interactLivingEntity(pPlayer, this, pHand);
+                    if (interactionresult.consumesAction()) {
+                        return interactionresult;
+                    }
+                }
+
+                this.doPlayerRide(pPlayer);
+                return InteractionResult.sidedSuccess(this.level().isClientSide);
+
+        } else {
+            return super.mobInteract(pPlayer, pHand);
+        }
+    }
+
 
     public void tickCDs() {
         //method ran per - tick to tick down cooldowns
@@ -354,6 +381,7 @@ public class UpdraftDragon extends TamableAnimal {
     }
 
     public void carve(float amt) {
+        //basically what happens when the player right clicks a dragon corpse
         this.setLootAmount(this.getLootAmount() - amt);
 
         if (!this.level().isClientSide()) {
@@ -370,7 +398,6 @@ public class UpdraftDragon extends TamableAnimal {
     }
 
     public void dropCarveLoot() {
-
         if (this.deathDamageSource == null) {
             this.deathDamageSource = this.damageSources().genericKill();
         }
@@ -391,4 +418,130 @@ public class UpdraftDragon extends TamableAnimal {
             this.spawnAtLocation(itemstack);
         }
     }
+
+    @Override
+    public boolean isSaddleable() {
+        return this.isAlive() && !this.isBaby() && this.isTame();
+    }
+
+    @Override
+    public void equipSaddle(@javax.annotation.Nullable SoundSource pSource) {
+        this.inventory.setItem(0, new ItemStack(Items.SADDLE));
+    }
+
+    @Override
+    public boolean isSaddled() {
+        //override this if the dragon needs saddle to ride
+        return true;
+    }
+
+    protected void doPlayerRide(Player pPlayer) {
+        if (!this.level().isClientSide) {
+            pPlayer.setYRot(this.getYRot());
+            pPlayer.setXRot(this.getXRot());
+            pPlayer.startRiding(this);
+        }
+
+    }
+
+    protected void tickRidden(Player pPlayer, Vec3 pTravelVector) {
+        super.tickRidden(pPlayer, pTravelVector);
+        Vec2 vec2 = this.getRiddenRotation(pPlayer);
+        //this.setRot(vec2.y, vec2.x);
+        System.out.println(vec2);
+        this.setRot((float) (Mth.RAD_TO_DEG * MathHelpers.LerpAngle(Mth.DEG_TO_RAD * this.getYRot(), Mth.DEG_TO_RAD * vec2.y, this.turnSpeed)),
+                (float) (Mth.RAD_TO_DEG * MathHelpers.LerpAngle(Mth.DEG_TO_RAD * this.getXRot(), Mth.DEG_TO_RAD * vec2.x, this.turnSpeed)));
+        this.yRotO = this.yBodyRot = this.yHeadRot = this.getYRot();
+        System.out.println(this.yBodyRot);
+    }
+
+    protected Vec2 getRiddenRotation(LivingEntity pEntity) {
+        return new Vec2(pEntity.getXRot() * 0.5F, pEntity.getYRot());
+    }
+
+    protected Vec3 getRiddenInput(Player pPlayer, Vec3 pTravelVector) {
+        float f = pPlayer.xxa * 0.5F;
+        float f1 = pPlayer.zza;
+        if (f1 <= 0.0F) {
+            f1 *= 0.25F;
+        }
+
+        return new Vec3(f, 0.0F, f1);
+    }
+
+    protected float getRiddenSpeed(Player pPlayer) {
+        return (float)this.getAttributeValue(Attributes.MOVEMENT_SPEED);
+    }
+
+    protected void positionRider(Entity pPassenger, Entity.MoveFunction pCallback) {
+        super.positionRider(pPassenger, pCallback);
+    }
+
+    @javax.annotation.Nullable
+    public LivingEntity getControllingPassenger() {
+        Entity entity = this.getFirstPassenger();
+        if (entity instanceof Mob) {
+            return (Mob)entity;
+        } else {
+            if (this.isSaddled()) {
+                entity = this.getFirstPassenger();
+                if (entity instanceof Player) {
+                    return (Player)entity;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    @javax.annotation.Nullable
+    private Vec3 getDismountLocationInDirection(Vec3 pDirection, LivingEntity pPassenger) {
+        double d0 = this.getX() + pDirection.x;
+        double d1 = this.getBoundingBox().minY;
+        double d2 = this.getZ() + pDirection.z;
+        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+        UnmodifiableIterator var10 = pPassenger.getDismountPoses().iterator();
+
+        while(var10.hasNext()) {
+            Pose pose = (Pose)var10.next();
+            blockpos$mutableblockpos.set(d0, d1, d2);
+            double d3 = this.getBoundingBox().maxY + (double)0.75F;
+
+            while(true) {
+                double d4 = this.level().getBlockFloorHeight(blockpos$mutableblockpos);
+                if ((double)blockpos$mutableblockpos.getY() + d4 > d3) {
+                    break;
+                }
+
+                if (DismountHelper.isBlockFloorValid(d4)) {
+                    AABB aabb = pPassenger.getLocalBoundsForPose(pose);
+                    Vec3 vec3 = new Vec3(d0, (double)blockpos$mutableblockpos.getY() + d4, d2);
+                    if (DismountHelper.canDismountTo(this.level(), pPassenger, aabb.move(vec3))) {
+                        pPassenger.setPose(pose);
+                        return vec3;
+                    }
+                }
+
+                blockpos$mutableblockpos.move(Direction.UP);
+                if (!((double)blockpos$mutableblockpos.getY() < d3)) {
+                    break;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public Vec3 getDismountLocationForPassenger(LivingEntity pLivingEntity) {
+        Vec3 vec3 = getCollisionHorizontalEscapeVector(this.getBbWidth(), pLivingEntity.getBbWidth(), this.getYRot() + (pLivingEntity.getMainArm() == HumanoidArm.RIGHT ? 90.0F : -90.0F));
+        Vec3 vec31 = this.getDismountLocationInDirection(vec3, pLivingEntity);
+        if (vec31 != null) {
+            return vec31;
+        } else {
+            Vec3 vec32 = getCollisionHorizontalEscapeVector(this.getBbWidth(), pLivingEntity.getBbWidth(), this.getYRot() + (pLivingEntity.getMainArm() == HumanoidArm.LEFT ? 90.0F : -90.0F));
+            Vec3 vec33 = this.getDismountLocationInDirection(vec32, pLivingEntity);
+            return vec33 != null ? vec33 : this.position();
+        }
+    }
+
 }

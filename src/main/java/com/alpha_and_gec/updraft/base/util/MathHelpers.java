@@ -273,47 +273,15 @@ public class MathHelpers {
         return (value % rangeZero);
     }
 
-    public static double LerpDegrees(double start, double end, double amount)
-    {
-        double difference = Math.abs(end - start);
-        //System.out.println("guh");
-        //System.out.println(Math.abs(end - start));
+    public static double LerpAngle(double p_from, double p_to, double p_weight) {
+        //Lerp angles..
+        //Uses and outputs radians
 
-        if (difference > Mth.PI)
-        {
-            // We need to add on to one of the values.
-            if (end > start)
-            {
-                // We'll add it on to start...
-                start += Mth.TWO_PI;
-            }
-            else
-            {
-                // Add it on to end.
-                end += Mth.TWO_PI;
-            }
-        }
+        double difference = (p_to - p_from) % (Math.PI*2);
 
-        // Interpolate it.
-        double value = (start + ((end - start) * amount));
+        double distance = ((2.0 * difference) % (Math.PI*2)) - difference;
 
-        //System.out.println(value);
-
-        // Wrap it..
-        float rangeZero = Mth.TWO_PI;
-
-        if (Double.isNaN(value)) {
-            return 0;
-        }
-
-        if (value >= 0 && value <= Mth.TWO_PI) {
-            //System.out.println(value);
-            return value;
-        }
-
-        //System.out.println(value % rangeZero);
-
-        return (value % rangeZero);
+        return p_from + distance * p_weight;
     }
 
     public static double flatDist(Vec3 a, Vec3 b) {

@@ -8,6 +8,7 @@ import com.alpha_and_gec.updraft.base.registry.UpdraftTags;
 import com.alpha_and_gec.updraft.base.util.IKSolver;
 import com.mojang.serialization.Dynamic;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
@@ -85,14 +86,17 @@ public class SteelgoreEntity extends UpdraftDragon {
 
     public boolean isStunned = false;
 
+    public boolean isCharging = false;
+
     public SteelgoreEntity(EntityType<? extends TamableAnimal> p_30341_, Level p_30342_) {
         super(p_30341_, p_30342_);
 
-        this.tailKinematics = new IKSolver(this, 6, 2, 1, 0.75, 2, false, true);
+        this.tailKinematics = null;
         this.setMeleeRadius(3.5f);
         this.setMaxUpStep(1);
         this.maxLootAmount = 6;
         this.lootAmount = 6;
+        this.turnSpeed = 0.05F;
     }
 
     @Nullable
@@ -110,7 +114,7 @@ public class SteelgoreEntity extends UpdraftDragon {
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, new DragonHurtByTargetGoal(this));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Ravager.class, true));
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, LivingEntity.class, true, entity -> entity.getType().is(UpdraftTags.STEELGORE_INTOLERANT)));
         this.targetSelector.addGoal(2, new OwnerHurtByTargetGoal(this));
         this.targetSelector.addGoal(3, new OwnerHurtTargetGoal(this));
     }
@@ -122,7 +126,7 @@ public class SteelgoreEntity extends UpdraftDragon {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1D)
                 .add(Attributes.ATTACK_DAMAGE, 16.0D)
                 .add(Attributes.ATTACK_KNOCKBACK, 5D)
-                .add(Attributes.MOVEMENT_SPEED, 0.3D)
+                .add(Attributes.MOVEMENT_SPEED, 0.2D)
                 .add(Attributes.FOLLOW_RANGE, 40.0D);
     }
 
@@ -137,7 +141,6 @@ public class SteelgoreEntity extends UpdraftDragon {
     }
 
     public void readAdditionalSaveData(CompoundTag pCompound) {
-        this.setAbsorptionAmount(pCompound.getFloat("AbsorptionAmount"));
         this.chargeCD = pCompound.getDouble("ChargeCooldown");
         this.goreCD = pCompound.getDouble("GoreCooldown");
         this.breathCharge = pCompound.getDouble("BreathCharge");
@@ -230,9 +233,8 @@ public class SteelgoreEntity extends UpdraftDragon {
             pEntity.hurt(this.damageSources().mobAttack(this), (float) (this.getAttribute(Attributes.ATTACK_DAMAGE).getValue() * 3));
 
             if (pEntity instanceof LivingEntity liver) {
-                Vec3 dirDiff = this.position().subtract(pEntity.position()).normalize();
-                liver.knockback(this.getAttributeValue(Attributes.ATTACK_KNOCKBACK), dirDiff.x, dirDiff.z);
-                liver.setDeltaMovement(liver.getDeltaMovement().add(0, this.getAttributeValue(Attributes.ATTACK_KNOCKBACK) * 0.3, 0));
+                this.knockbackFromSelf(liver, 1);
+                liver.setDeltaMovement(liver.getDeltaMovement().add(0, this.getAttributeValue(Attributes.ATTACK_KNOCKBACK) * 0.2, 0));
                 //yes I know vertical knockback is not proportional to horizontal knockback, it looks funnier
             }
         } else {
@@ -240,6 +242,27 @@ public class SteelgoreEntity extends UpdraftDragon {
         }
 
         super.push(pEntity);
+    }
+
+    public void knockbackFromSelf(LivingEntity target, float multiplier) {
+        Vec3 dirDiff = this.position().subtract(target.position()).normalize();
+        target.knockback(this.getAttributeValue(Attributes.ATTACK_KNOCKBACK) * multiplier, dirDiff.x, dirDiff.z);
+    }
+
+    public void poof(boolean server) {
+        //make some puffy smoke
+        Vec3 vec3 = this.getBoundingBox().getCenter();
+        for(int i = 0; i < 40; ++i) {
+            double d0 = this.random.nextGaussian() * 0.2;
+            double d1 = this.random.nextGaussian() * 0.2;
+            double d2 = this.random.nextGaussian() * 0.2;
+
+            if (server) {
+                ((ServerLevel) this.level()).sendParticles(ParticleTypes.POOF, vec3.x, vec3.y, vec3.z, 1, d0, d1, d2, 0.1D);
+            } else {
+                this.level().addAlwaysVisibleParticle(ParticleTypes.POOF, vec3.x, vec3.y, vec3.z, d0, d1, d2);
+            }
+        }
     }
 
     public boolean isFood(ItemStack stack) {
