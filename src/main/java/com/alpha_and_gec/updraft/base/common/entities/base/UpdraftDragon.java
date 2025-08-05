@@ -35,8 +35,12 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class UpdraftDragon extends TamableAnimal implements Saddleable{
+public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnimatable {
     public static final EntityDataAccessor<Integer> ANIMATION_STATE = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.INT);
     public static final EntityDataAccessor<Integer> ATTACK_STATE = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.INT);
     //states determining which animation this beast should play
@@ -78,6 +82,7 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable{
     public int wetlim = 100;
     //how many ticks does it take to dry
 
+    protected final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     protected UpdraftDragon(EntityType<? extends TamableAnimal> p_30341_, Level p_30342_) {
         super(p_30341_, p_30342_);
     }
@@ -164,10 +169,10 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable{
             wetness = Math.max(0, wetness - 1);
         }
 
-        if (this.level().isClientSide()){
-            this.checkAnimationState();
-        } else {
+        if (!this.level().isClientSide()){
             this.switchAnimationState();
+        } else {
+            this.checkAnimationState();
         }
     }
 
@@ -274,9 +279,25 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable{
         }
     }
 
+    public boolean isMoving() {
+        if (this.getDeltaMovement().toVector3f().length() > 1.0E-5F) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public boolean isEating() {
         //check if the dragon is eating smthing
         return false;
+    }
+
+    public void setAnimationState(int state) {
+        this.entityData.set(ANIMATION_STATE, state);
+    }
+
+    public int getAnimationState() {
+        return this.entityData.get(ANIMATION_STATE);
     }
 
     public void setAttackState(int state) {
@@ -444,21 +465,23 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable{
 
     }
 
+    @Override
     protected void tickRidden(Player pPlayer, Vec3 pTravelVector) {
         super.tickRidden(pPlayer, pTravelVector);
         Vec2 vec2 = this.getRiddenRotation(pPlayer);
         //this.setRot(vec2.y, vec2.x);
-        System.out.println(vec2);
+        //System.out.println(vec2);
         this.setRot((float) (Mth.RAD_TO_DEG * MathHelpers.LerpAngle(Mth.DEG_TO_RAD * this.getYRot(), Mth.DEG_TO_RAD * vec2.y, this.turnSpeed)),
                 (float) (Mth.RAD_TO_DEG * MathHelpers.LerpAngle(Mth.DEG_TO_RAD * this.getXRot(), Mth.DEG_TO_RAD * vec2.x, this.turnSpeed)));
         this.yRotO = this.yBodyRot = this.yHeadRot = this.getYRot();
-        System.out.println(this.yBodyRot);
+        //System.out.println(this.yBodyRot);
     }
 
     protected Vec2 getRiddenRotation(LivingEntity pEntity) {
         return new Vec2(pEntity.getXRot() * 0.5F, pEntity.getYRot());
     }
 
+    @Override
     protected Vec3 getRiddenInput(Player pPlayer, Vec3 pTravelVector) {
         float f = pPlayer.xxa * 0.5F;
         float f1 = pPlayer.zza;
@@ -469,14 +492,17 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable{
         return new Vec3(f, 0.0F, f1);
     }
 
+    @Override
     protected float getRiddenSpeed(Player pPlayer) {
         return (float)this.getAttributeValue(Attributes.MOVEMENT_SPEED);
     }
 
+    @Override
     protected void positionRider(Entity pPassenger, Entity.MoveFunction pCallback) {
         super.positionRider(pPassenger, pCallback);
     }
 
+    @Override
     @javax.annotation.Nullable
     public LivingEntity getControllingPassenger() {
         Entity entity = this.getFirstPassenger();
@@ -532,6 +558,7 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable{
         return null;
     }
 
+    @Override
     public Vec3 getDismountLocationForPassenger(LivingEntity pLivingEntity) {
         Vec3 vec3 = getCollisionHorizontalEscapeVector(this.getBbWidth(), pLivingEntity.getBbWidth(), this.getYRot() + (pLivingEntity.getMainArm() == HumanoidArm.RIGHT ? 90.0F : -90.0F));
         Vec3 vec31 = this.getDismountLocationInDirection(vec3, pLivingEntity);
@@ -544,4 +571,19 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable{
         }
     }
 
+
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return this.cache;
+    }
+
+    @Override
+    public double getTick(Object o) {
+        return tickCount;
+    }
 }

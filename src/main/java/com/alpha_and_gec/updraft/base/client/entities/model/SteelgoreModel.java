@@ -422,8 +422,6 @@ public class SteelgoreModel<T extends SteelgoreEntity> extends HierarchicalModel
 		this.neck.yRot = (netHeadYaw * (Mth.DEG_TO_RAD)) / 2;
 		this.head.yRot = (netHeadYaw * (Mth.DEG_TO_RAD)) / 2;
 
-		this.animate(entity.idleAnimationState, SteelgoreAnimations.IDLE, ageInTicks, (float) (0.5 + limbSwingAmount * 4.0f));
-
 		double rate = 0.025;
 
 		if (!entity.isDeadOrDying()) {

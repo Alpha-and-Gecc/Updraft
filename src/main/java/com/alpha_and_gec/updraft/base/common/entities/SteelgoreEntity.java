@@ -37,33 +37,37 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
 
 import javax.annotation.Nullable;
 
 public class SteelgoreEntity extends UpdraftDragon {
-    public final net.minecraft.world.entity.AnimationState stunAnimationState = new net.minecraft.world.entity.AnimationState();
-    public final net.minecraft.world.entity.AnimationState sitAnimationState = new net.minecraft.world.entity.AnimationState();
-    public final net.minecraft.world.entity.AnimationState idleAnimationState = new net.minecraft.world.entity.AnimationState();
-    public final net.minecraft.world.entity.AnimationState walkAnimationState = new net.minecraft.world.entity.AnimationState();
+    private static final RawAnimation STEELGORE_STUNNED = RawAnimation.begin().thenLoop("animation.steelgore.stunned");
+    private static final RawAnimation STEELGORE_SIT = RawAnimation.begin().thenLoop("animation.steelgore.sit");
+    private static final RawAnimation STEELGORE_IDLE = RawAnimation.begin().thenLoop("animation.steelgore.idle");
+    private static final RawAnimation STEELGORE_WALK = RawAnimation.begin().thenLoop("animation.steelgore.walk");
 
-    public final net.minecraft.world.entity.AnimationState waterIdleAnimationState = new net.minecraft.world.entity.AnimationState();
-    public final net.minecraft.world.entity.AnimationState swimAnimationState = new net.minecraft.world.entity.AnimationState();
+    private static final RawAnimation STEELGORE_WATER_IDLE = RawAnimation.begin().thenLoop("animation.steelgore.wateridle");
+    private static final RawAnimation STEELGORE_SWIM = RawAnimation.begin().thenLoop("animation.steelgore.swim");
 
-    public final net.minecraft.world.entity.AnimationState airIdleAnimationState = new net.minecraft.world.entity.AnimationState();
-    public final net.minecraft.world.entity.AnimationState flyAnimationState = new net.minecraft.world.entity.AnimationState();
-    public final net.minecraft.world.entity.AnimationState diveAnimationState = new net.minecraft.world.entity.AnimationState();
+    private static final RawAnimation STEELGORE_HOVER = RawAnimation.begin().thenLoop("animation.steelgore.hover");
+    private static final RawAnimation STEELGORE_FLY = RawAnimation.begin().thenLoop("animation.steelgore.fly");
+    private static final RawAnimation STEELGORE_DIVE = RawAnimation.begin().thenLoop("animation.steelgore.dive");
 
-    public final net.minecraft.world.entity.AnimationState goreAnimationState = new net.minecraft.world.entity.AnimationState();
-    public final net.minecraft.world.entity.AnimationState breathAnimationState = new net.minecraft.world.entity.AnimationState();
-    public final net.minecraft.world.entity.AnimationState chargeAnimationState = new net.minecraft.world.entity.AnimationState();
-    public final net.minecraft.world.entity.AnimationState roarAnimationState = new net.minecraft.world.entity.AnimationState();
+    private static final RawAnimation STEELGORE_ATK_GORE = RawAnimation.begin().thenLoop("animation.steelgore.gore");
+    private static final RawAnimation STEELGORE_ATK_CHARGE = RawAnimation.begin().thenLoop("animation.steelgore.charge");
+    private static final RawAnimation STEELGORE_ATK_BREATH = RawAnimation.begin().thenLoop("animation.steelgore.breath");
+    private static final RawAnimation STEELGORE_ATK_ROAR = RawAnimation.begin().thenLoop("animation.steelgore.breath");
 
-    public final net.minecraft.world.entity.AnimationState shakeAnimationState = new net.minecraft.world.entity.AnimationState();
-    public final net.minecraft.world.entity.AnimationState feedAnimationState = new net.minecraft.world.entity.AnimationState();
+    private static final RawAnimation STEELGORE_FEED = RawAnimation.begin().thenLoop("animation.steelgore.feed");
 
-    public final net.minecraft.world.entity.AnimationState dieAnimationState = new net.minecraft.world.entity.AnimationState();
-    public final net.minecraft.world.entity.AnimationState dieWaterAnimationState = new net.minecraft.world.entity.AnimationState();
-    public final net.minecraft.world.entity.AnimationState dieAirAnimationState = new net.minecraft.world.entity.AnimationState();
+    private static final RawAnimation STEELGORE_DEATH = RawAnimation.begin().thenLoop("animation.steelgore.death");
+    private static final RawAnimation STEELGORE_DEATH_WATER = RawAnimation.begin().thenLoop("animation.steelgore.death_water");
+    private static final RawAnimation STEELGORE_DEATH_AIR = RawAnimation.begin().thenLoop("animation.steelgore.death_air");
 
 
     public double chargeCD;
@@ -91,7 +95,7 @@ public class SteelgoreEntity extends UpdraftDragon {
     public SteelgoreEntity(EntityType<? extends TamableAnimal> p_30341_, Level p_30342_) {
         super(p_30341_, p_30342_);
 
-        this.tailKinematics = null;
+        this.tailKinematics = new IKSolver(this, 4, 2, 1, 0.75, 2, false, true);
         this.setMeleeRadius(3.5f);
         this.setMaxUpStep(1);
         this.maxLootAmount = 6;
@@ -375,25 +379,28 @@ public class SteelgoreEntity extends UpdraftDragon {
     public void switchAnimationState() {
         //method ran per - tick to assert which animation a dragon ought to play
         //serverside only, ran to guarantee checkAnimationState works
+
+        System.out.println(this.getDeltaMovement().toVector3f().length());
+
         if (this.isStunned() && !this.isDeadOrDying()) {
-            this.entityData.set(ANIMATION_STATE, 1);
+            this.setAnimationState(0);
             //stun
 
         } else if (this.isInWaterOrBubble()) {
             //water anims
 
             if (!this.isAlive()) {
-                this.entityData.set(ANIMATION_STATE, 2);
+                this.setAnimationState(1);
                 //water death
 
             } else {
-                if (this.walkAnimation.isMoving()) {
-                    this.entityData.set(ANIMATION_STATE, 3);
+                if (this.isMoving()) {
+                    this.setAnimationState(2);
                     //swim
 
                 } else {
                     //water idle
-                    this.entityData.set(ANIMATION_STATE, 4);
+                    this.setAnimationState(3);
                 }
             }
 
@@ -402,24 +409,24 @@ public class SteelgoreEntity extends UpdraftDragon {
             //flying anims
 
             if (!this.isAlive()) {
-                this.entityData.set(ANIMATION_STATE, 5);
+                this.setAnimationState(4);
                 //air death
 
             } else {
-                if (this.walkAnimation.isMoving()) {
+                if (this.isMoving()) {
 
                     if (this.isDiving()) {
-                        this.entityData.set(ANIMATION_STATE, 6);
+                        this.setAnimationState(5);
                         //dive
 
                     } else {
-                        this.entityData.set(ANIMATION_STATE, 7);
+                        this.setAnimationState(6);
                         //fly
                     }
 
                 } else {
-                    //air idle
-                    this.entityData.set(ANIMATION_STATE, 8);
+                    //hover
+                    this.setAnimationState(7);
                 }
             }
 
@@ -427,65 +434,117 @@ public class SteelgoreEntity extends UpdraftDragon {
             //land anims
 
             if (!this.isAlive()) {
-                this.entityData.set(ANIMATION_STATE, 9);
+                this.setAnimationState(8);
                 //land death
 
             } else {
                 if (this.isOrderedToSit()) {
-                    this.entityData.set(ANIMATION_STATE, 10);
+                    this.setAnimationState(9);
                     //sit
 
-                } else if (this.walkAnimation.isMoving()) {
-                    this.entityData.set(ANIMATION_STATE, 11);
+                } else if (this.isMoving()) {
+                    this.setAnimationState(10);
                     //walk
 
                 } else {
                     //idle
-                    this.entityData.set(ANIMATION_STATE, 12);
+                    this.setAnimationState(11);
                 }
             }
 
         }
     }
 
+    protected <E extends SteelgoreEntity> PlayState Controller(final software.bernie.geckolib.core.animation.AnimationState<E> event) {
+
+        switch (this.getAnimationState()) {
+            case 0:
+                event.setAndContinue(STEELGORE_STUNNED);
+                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                break;
+            case 1:
+                event.setAndContinue(STEELGORE_DEATH_WATER);
+                event.getController().setAnimationSpeed(1.0F);
+                break;
+            case 2:
+                event.setAndContinue(STEELGORE_SWIM);
+                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                break;
+            case 3:
+                event.setAndContinue(STEELGORE_WATER_IDLE);
+                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                break;
+            case 4:
+                event.setAndContinue(STEELGORE_DEATH_AIR);
+                event.getController().setAnimationSpeed(1.0F);
+                break;
+            case 5:
+                event.setAndContinue(STEELGORE_DIVE);
+                event.getController().setAnimationSpeed(1.0F);
+                break;
+            case 6:
+                event.setAndContinue(STEELGORE_FLY);
+                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                break;
+            case 7:
+                event.setAndContinue(STEELGORE_HOVER);
+                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                break;
+            case 8:
+                event.setAndContinue(STEELGORE_DEATH);
+                event.getController().setAnimationSpeed(1.0F);
+                break;
+            case 9:
+                event.setAndContinue(STEELGORE_SIT);
+                event.getController().setAnimationSpeed(1.0F);
+                break;
+            case 10:
+                event.setAndContinue(STEELGORE_WALK);
+                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                break;
+            case 11:
+                event.setAndContinue(STEELGORE_IDLE);
+                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                break;
+        }
+
+        if (this.getAttackState() == 3) {
+            event.setAndContinue(STEELGORE_ATK_CHARGE);
+            event.getController().setAnimationSpeed(1.0F);
+
+        } else if (this.getAttackState() == 4) {
+            event.setAndContinue(STEELGORE_ATK_ROAR);
+            event.getController().setAnimationSpeed(1.0F);
+        }
+
+
+        return PlayState.CONTINUE;
+    }
+
+    protected <E extends SteelgoreEntity> PlayState AtkController(final software.bernie.geckolib.core.animation.AnimationState<E> event) {
+
+        switch (this.getAnimationState()) {
+            case 0:
+                event.setAndContinue(null);
+                event.getController().setAnimationSpeed(1.0F);
+                break;
+            case 1:
+                event.setAndContinue(STEELGORE_ATK_GORE);
+                event.getController().setAnimationSpeed(1.0F);
+                break;
+            case 2:
+                event.setAndContinue(STEELGORE_ATK_BREATH);
+                event.getController().setAnimationSpeed(1.0F);
+                break;
+        }
+
+        return PlayState.CONTINUE;
+    }
+
     @Override
-    public void checkAnimationState() {
-        int animState = this.entityData.get(ANIMATION_STATE);
-
-        //stunned
-        this.stunAnimationState.animateWhen(animState == 1, this.tickCount);
-
-        //swimming
-        this.dieWaterAnimationState.animateWhen(animState == 2, this.tickCount);
-        this.swimAnimationState.animateWhen(animState == 3, this.tickCount);
-        this.waterIdleAnimationState.animateWhen(animState == 4, this.tickCount);
-
-        //flying
-        this.dieAirAnimationState.animateWhen(animState == 5, this.tickCount);
-        this.diveAnimationState.animateWhen(animState == 6, this.tickCount);
-        this.flyAnimationState.animateWhen(animState == 7, this.tickCount);
-        this.airIdleAnimationState.animateWhen(animState == 8, this.tickCount);
-
-        //walking
-        this.dieAnimationState.animateWhen(animState == 9, this.tickCount);
-        this.sitAnimationState.animateWhen(animState == 10, this.tickCount);
-        this.walkAnimationState.animateWhen(animState == 11, this.tickCount);
-        this.idleAnimationState.animateWhen(animState == 12, this.tickCount);
-
-        //attacking
-        this.goreAnimationState.animateWhen(this.isAlive() && this.getAttackState() == 1, this.tickCount);
-        this.breathAnimationState.animateWhen(this.isAlive() && this.getAttackState() == 2, this.tickCount);
-        this.chargeAnimationState.animateWhen(this.isAlive() && this.getAttackState() == 3, this.tickCount);
-        this.roarAnimationState.animateWhen(!this.isAlive() && this.getAttackState() == 4, this.tickCount);
-
-        //special
-        this.shakeAnimationState.animateWhen(this.isAlive() && this.justGotOutOfWater(), this.tickCount);
-        this.feedAnimationState.animateWhen(this.isAlive() && this.isEating(), this.tickCount);
-
-        //death
-        this.dieAnimationState.animateWhen(!this.isAlive() && !this.isInWaterOrBubble(), this.tickCount);
-        this.dieWaterAnimationState.animateWhen(!this.isAlive() && this.isInWaterOrBubble(), this.tickCount);
-        this.dieAirAnimationState.animateWhen(!this.isAlive() && this.isFallFlying(), this.tickCount);
+    public void registerControllers(final AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<>(this, "Normal", 5, this::Controller));
+        controllers.add(new AnimationController<>(this, "Attack", 5, this::AtkController));
     }
 
     public void stun() {
