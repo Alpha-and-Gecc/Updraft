@@ -3,6 +3,7 @@ package com.alpha_and_gec.updraft.base.events;
 import com.alpha_and_gec.updraft.base.Updraft;
 import com.alpha_and_gec.updraft.base.client.entities.model.SteelgoreModel;
 import com.alpha_and_gec.updraft.base.client.entities.renderer.SteelgoreRenderer;
+import com.alpha_and_gec.updraft.base.common.entities.SteelgoreEntity;
 import com.alpha_and_gec.updraft.base.registry.UpdraftEntities;
 import com.alpha_and_gec.updraft.base.registry.UpdraftLayers;
 import net.minecraftforge.api.distmarker.Dist;
@@ -22,11 +23,7 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(UpdraftEntities.STEELGORE.get(), SteelgoreRenderer::new);
-    }
+        event.registerEntityRenderer(UpdraftEntities.STEELGORE.get(), e -> new SteelgoreRenderer<>(e, new SteelgoreModel()));
 
-    @SubscribeEvent
-    public static void registerLayer(EntityRenderersEvent.RegisterLayerDefinitions event) {
-        event.registerLayerDefinition(UpdraftLayers.STEELGORE_LAYER, SteelgoreModel::createBodyLayer);
     }
 }

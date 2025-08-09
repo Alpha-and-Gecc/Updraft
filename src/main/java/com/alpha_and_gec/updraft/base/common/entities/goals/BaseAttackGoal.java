@@ -10,7 +10,6 @@ import net.minecraft.world.entity.player.Player;
 import java.util.EnumSet;
 
 public class BaseAttackGoal extends Goal{
-    protected int attackTime = 0;
     protected int timeOut = 0;
     protected int goalActiveTime = 0;
     protected final UpdraftDragon creature;
@@ -23,7 +22,7 @@ public class BaseAttackGoal extends Goal{
     @Override
     public void start() {
         this.creature.setAggressive(true);
-        this.attackTime = 0;
+        this.creature.attackTime = 0;
         this.timeOut = 0;
         this.goalActiveTime = 0;
         this.creature.setAttackState(0);
@@ -42,11 +41,12 @@ public class BaseAttackGoal extends Goal{
         if (!EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(target)) {
             this.creature.setTarget(null);
         }
+
+        this.creature.setAttackState(0);
         this.creature.setAggressive(false);
         this.creature.getNavigation().stop();
-        this.creature.setAttackState(0);
         this.goalActiveTime = 0;
-        this.attackTime = 0;
+        this.creature.attackTime = 0;
         this.timeOut = 0;
         //System.out.println("goalEnd");
     }

@@ -67,13 +67,15 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
     private boolean selfFriendly = false;
     //^do NOT edit this variable outside of the constructor
 
+    public int attackTime = 0;
+
     public IKSolver tailKinematics;
 
     public boolean flightState = false;
 
     public boolean contactDmg = false;
 
-    public float meleeRadius = 3.5F;
+    public float meleeRadius = 4F;
 
     public float turnSpeed = 0.1F;
     //Number between 0 and 1
@@ -152,7 +154,27 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
             if (this.isCarved()) {
                 this.remove(Entity.RemovalReason.KILLED);
             }
+
+            if (this.isInWater()) {
+                Vec3 vec3 = this.getDeltaMovement();
+
+                double d0 = Math.max(-0.1D, vec3.y - 0.01D);
+
+                this.setDeltaMovement(vec3.x, d0, vec3.z);
+
+            } else if (!this.onGround()) {
+                Vec3 vec3 = this.getDeltaMovement();
+
+                double d0 = Math.max(-0.5D, vec3.y - 0.05D);
+
+                this.setDeltaMovement(vec3.x, d0, vec3.z);
+            }
+
         }
+
+
+        this.move(MoverType.SELF, this.getDeltaMovement());
+        this.setOnGroundWithKnownMovement(this.level().getBlockState(this.blockPosition().below()).isSolid(), collide(this.getDeltaMovement()));
     }
 
     public void tick() {
@@ -193,6 +215,8 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
         super.die(pDamageSource);
         this.setPose(Pose.STANDING);
         this.deathDamageSource = pDamageSource;
+        this.setAttackTime(0);
+        this.setAttackState(0);
     }
 
     @Override
@@ -272,19 +296,36 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
     public boolean isDiving() {
         //check if the dragon is at the correct angle to play the diving animation
 
-        if (this.isFallFlying() && this.flightState == true && this.getXRot() > 75) {
+        if (!this.onGround() && this.flightState == true && this.getXRot() > 75) {
             return true;
         } else {
             return false;
         }
     }
 
-    public boolean isMoving() {
-        if (this.getDeltaMovement().toVector3f().length() > 1.0E-5F) {
-            return true;
-        } else {
-            return false;
-        }
+    public boolean isMovingForwards() {
+        return this.getVelocity() > this.getAttributeValue(Attributes.MOVEMENT_SPEED)/10;
+    }
+
+    public boolean isWalking() {
+        return this.getHorizontalVelocity() > this.getAttributeValue(Attributes.MOVEMENT_SPEED)/10;
+    }
+
+    public double getVelocity() {
+        //check if the dragon is at the correct angle to play the diving animation
+
+        Vec3 vec3 = this.getDeltaMovement();
+
+        return vec3.length();
+    }
+
+    public float getHorizontalVelocity() {
+        //check if the dragon is at the correct angle to play the diving animation
+
+        Vec3 vec3 = this.getDeltaMovement();
+        Vec2 vec2 = new Vec2((float) vec3.x(), (float) vec3.z());
+
+        return vec2.length();
     }
 
     public boolean isEating() {
@@ -323,6 +364,20 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
     public float getMeleeRadius() {
         return this.meleeRadius;
     }
+
+
+    public int getAttackTime() {
+        return this.attackTime;
+    }
+
+    public void setAttackTime(int state) {
+        this.attackTime = state;
+    }
+
+    public void attackTimeIncrement() {
+        this.attackTime++;
+    }
+
 
     public boolean hasTarget() {
         return this.getTarget() != null;

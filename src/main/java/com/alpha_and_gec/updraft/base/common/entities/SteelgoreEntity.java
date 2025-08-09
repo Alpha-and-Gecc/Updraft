@@ -15,6 +15,7 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -35,6 +36,7 @@ import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -51,37 +53,44 @@ public class SteelgoreEntity extends UpdraftDragon {
     private static final RawAnimation STEELGORE_IDLE = RawAnimation.begin().thenLoop("animation.steelgore.idle");
     private static final RawAnimation STEELGORE_WALK = RawAnimation.begin().thenLoop("animation.steelgore.walk");
 
-    private static final RawAnimation STEELGORE_WATER_IDLE = RawAnimation.begin().thenLoop("animation.steelgore.wateridle");
+    private static final RawAnimation STEELGORE_WATER_IDLE = RawAnimation.begin().thenLoop("animation.steelgore.swim_idle");
     private static final RawAnimation STEELGORE_SWIM = RawAnimation.begin().thenLoop("animation.steelgore.swim");
 
     private static final RawAnimation STEELGORE_HOVER = RawAnimation.begin().thenLoop("animation.steelgore.hover");
     private static final RawAnimation STEELGORE_FLY = RawAnimation.begin().thenLoop("animation.steelgore.fly");
+    private static final RawAnimation STEELGORE_GLIDE = RawAnimation.begin().thenLoop("animation.steelgore.glide");
     private static final RawAnimation STEELGORE_DIVE = RawAnimation.begin().thenLoop("animation.steelgore.dive");
 
-    private static final RawAnimation STEELGORE_ATK_GORE = RawAnimation.begin().thenLoop("animation.steelgore.gore");
-    private static final RawAnimation STEELGORE_ATK_CHARGE = RawAnimation.begin().thenLoop("animation.steelgore.charge");
-    private static final RawAnimation STEELGORE_ATK_BREATH = RawAnimation.begin().thenLoop("animation.steelgore.breath");
-    private static final RawAnimation STEELGORE_ATK_ROAR = RawAnimation.begin().thenLoop("animation.steelgore.breath");
+    private static final RawAnimation STEELGORE_ATK_GORE = RawAnimation.begin().thenLoop("animation.steelgore.attack_gore");
+    private static final RawAnimation STEELGORE_ATK_CHARGE = RawAnimation.begin().thenLoop("animation.steelgore.attack_charge");
+    private static final RawAnimation STEELGORE_ATK_BREATH = RawAnimation.begin().thenLoop("animation.steelgore.attack_breath");
+    private static final RawAnimation STEELGORE_ATK_BREATH_HOLD = RawAnimation.begin().thenLoop("animation.steelgore.attack_breath_hold");
+    private static final RawAnimation STEELGORE_ATK_ROAR = RawAnimation.begin().thenLoop("animation.steelgore.attack_roar");
 
     private static final RawAnimation STEELGORE_FEED = RawAnimation.begin().thenLoop("animation.steelgore.feed");
+    private static final RawAnimation STEELGORE_FED = RawAnimation.begin().thenLoop("animation.steelgore.tame_chew");
 
-    private static final RawAnimation STEELGORE_DEATH = RawAnimation.begin().thenLoop("animation.steelgore.death");
-    private static final RawAnimation STEELGORE_DEATH_WATER = RawAnimation.begin().thenLoop("animation.steelgore.death_water");
-    private static final RawAnimation STEELGORE_DEATH_AIR = RawAnimation.begin().thenLoop("animation.steelgore.death_air");
+    private static final RawAnimation STEELGORE_DEATH = RawAnimation.begin().thenPlay("animation.steelgore.die");
+    private static final RawAnimation STEELGORE_DEATH_WATER = RawAnimation.begin().thenPlay("animation.steelgore.swim_die");
+    private static final RawAnimation STEELGORE_DEATH_AIR = RawAnimation.begin().thenLoop("animation.steelgore.fall");
+    private static final RawAnimation STEELGORE_NULL = RawAnimation.begin().thenLoop("animation.steelgore.null");
 
 
     public double chargeCD;
     //cooldown for charge attack, only usable if it is at 0
-    public static final double chargeCap = 100;
+    public static final double chargeCap = 1000;
 
     public double goreCD;
     //cooldown for gore attack, only usable if it is at 0
-    public static final double goreCap = 20;
+    public static final double goreCap = 5;
 
     public double breathCharge;
+    public double AIbreathCD;
     //cooldown for breath usage, this is unique in that as long as it is below cap the breath charge can be used, and each tick of usage increases the cooldown up to the cap
     //this represents how many ticks it can breath fire for
-    public static final double breathCap = 60;
+    public static final double breathCap = 200;
+    public static final double breathRegen = 1;
+    public static final double breathDrain = 10;
 
     public double roarCD;
     //cooldown for roaring, ONLY APPLIES TO WILD
@@ -95,8 +104,8 @@ public class SteelgoreEntity extends UpdraftDragon {
     public SteelgoreEntity(EntityType<? extends TamableAnimal> p_30341_, Level p_30342_) {
         super(p_30341_, p_30342_);
 
-        this.tailKinematics = new IKSolver(this, 4, 2, 1, 0.75, 2, false, true);
-        this.setMeleeRadius(3.5f);
+        this.tailKinematics = new IKSolver(this, 4, 2, 2, 0.75, 2, false, true);
+        this.setMeleeRadius(4.5f);
         this.setMaxUpStep(1);
         this.maxLootAmount = 6;
         this.lootAmount = 6;
@@ -171,6 +180,13 @@ public class SteelgoreEntity extends UpdraftDragon {
         super.tick();
     }
 
+    public void zeroCDs() {
+        this.chargeCD = 0;
+        this.goreCD = 0;
+        this.roarCD = 0;
+        this.breathCharge = breathCap;
+    }
+
     @Override
     public void tickCDs() {
         //method ran per - tick to tick down cooldowns
@@ -178,8 +194,11 @@ public class SteelgoreEntity extends UpdraftDragon {
 
         this.chargeCD = Math.max(0, chargeCD - 1);
         this.goreCD = Math.max(0, goreCD - 1);
-        this.roarCD = Math.max(0, breathCharge - 1);
-        this.breathCharge = Math.max(0, breathCharge - 1);
+        this.roarCD = Math.max(0, roarCD - 1);
+        this.AIbreathCD = Math.max(0, AIbreathCD - 1);
+        this.breathCharge = Math.min(breathCap, this.breathCharge + breathRegen);
+
+        System.out.println(this.breathCharge);
     }
 
     @Override
@@ -238,7 +257,7 @@ public class SteelgoreEntity extends UpdraftDragon {
 
             if (pEntity instanceof LivingEntity liver) {
                 this.knockbackFromSelf(liver, 1);
-                liver.setDeltaMovement(liver.getDeltaMovement().add(0, this.getAttributeValue(Attributes.ATTACK_KNOCKBACK) * 0.2, 0));
+                liver.setDeltaMovement(liver.getDeltaMovement().add(0, this.getAttributeValue(Attributes.ATTACK_KNOCKBACK) * 0.15, 0));
                 //yes I know vertical knockback is not proportional to horizontal knockback, it looks funnier
             }
         } else {
@@ -376,11 +395,20 @@ public class SteelgoreEntity extends UpdraftDragon {
         return 4;
     }
 
+    @Nullable
+    @Override
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor worldIn, DifficultyInstance difficultyIn, MobSpawnType reason, @Nullable SpawnGroupData spawnDataIn, @Nullable CompoundTag dataTag) {
+        spawnDataIn = super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+        this.zeroCDs();
+        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+        //TODO: implement proper spawning(spawns around shipwrecks and swamp huts)
+    }
+
     public void switchAnimationState() {
         //method ran per - tick to assert which animation a dragon ought to play
         //serverside only, ran to guarantee checkAnimationState works
 
-        System.out.println(this.getDeltaMovement().toVector3f().length());
+        //System.out.println(this.getHorizontalVelocity());
 
         if (this.isStunned() && !this.isDeadOrDying()) {
             this.setAnimationState(0);
@@ -394,7 +422,7 @@ public class SteelgoreEntity extends UpdraftDragon {
                 //water death
 
             } else {
-                if (this.isMoving()) {
+                if (this.isWalking()) {
                     this.setAnimationState(2);
                     //swim
 
@@ -405,7 +433,7 @@ public class SteelgoreEntity extends UpdraftDragon {
             }
 
 
-        } else if (this.isFallFlying()){
+        } else if (!this.onGround()){
             //flying anims
 
             if (!this.isAlive()) {
@@ -413,7 +441,7 @@ public class SteelgoreEntity extends UpdraftDragon {
                 //air death
 
             } else {
-                if (this.isMoving()) {
+                if (this.isWalking()) {
 
                     if (this.isDiving()) {
                         this.setAnimationState(5);
@@ -442,7 +470,7 @@ public class SteelgoreEntity extends UpdraftDragon {
                     this.setAnimationState(9);
                     //sit
 
-                } else if (this.isMoving()) {
+                } else if (isWalking()) {
                     this.setAnimationState(10);
                     //walk
 
@@ -457,22 +485,35 @@ public class SteelgoreEntity extends UpdraftDragon {
 
     protected <E extends SteelgoreEntity> PlayState Controller(final software.bernie.geckolib.core.animation.AnimationState<E> event) {
 
+        double attributespeed = this.getAttributeValue(Attributes.MOVEMENT_SPEED);
+
+        if (this.getAttackState() == 3) {
+            event.setAndContinue(STEELGORE_ATK_CHARGE);
+            event.getController().setAnimationSpeed(1.0F);
+            return PlayState.CONTINUE;
+
+        } else if (this.getAttackState() == 4) {
+            event.setAndContinue(STEELGORE_ATK_ROAR);
+            event.getController().setAnimationSpeed(1.0F);
+            return PlayState.CONTINUE;
+        }
+
         switch (this.getAnimationState()) {
             case 0:
                 event.setAndContinue(STEELGORE_STUNNED);
-                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                event.getController().setAnimationSpeed(1.0F);
                 break;
             case 1:
-                event.setAndContinue(STEELGORE_DEATH_WATER);
+                event.setAnimation(STEELGORE_DEATH_WATER);
                 event.getController().setAnimationSpeed(1.0F);
                 break;
             case 2:
                 event.setAndContinue(STEELGORE_SWIM);
-                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                event.getController().setAnimationSpeed(this.getVelocity()/attributespeed + 1.0F);
                 break;
             case 3:
                 event.setAndContinue(STEELGORE_WATER_IDLE);
-                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                event.getController().setAnimationSpeed(this.getVelocity()/attributespeed + 1.0F);
                 break;
             case 4:
                 event.setAndContinue(STEELGORE_DEATH_AIR);
@@ -484,14 +525,14 @@ public class SteelgoreEntity extends UpdraftDragon {
                 break;
             case 6:
                 event.setAndContinue(STEELGORE_FLY);
-                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                event.getController().setAnimationSpeed(this.getVelocity()/attributespeed + 1.0F);
                 break;
             case 7:
                 event.setAndContinue(STEELGORE_HOVER);
-                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                event.getController().setAnimationSpeed(this.getVelocity()/attributespeed + 1.0F);
                 break;
             case 8:
-                event.setAndContinue(STEELGORE_DEATH);
+                event.setAnimation(STEELGORE_DEATH);
                 event.getController().setAnimationSpeed(1.0F);
                 break;
             case 9:
@@ -500,32 +541,22 @@ public class SteelgoreEntity extends UpdraftDragon {
                 break;
             case 10:
                 event.setAndContinue(STEELGORE_WALK);
-                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                event.getController().setAnimationSpeed(this.getHorizontalVelocity()/attributespeed + 1.0F);
                 break;
             case 11:
                 event.setAndContinue(STEELGORE_IDLE);
-                event.getController().setAnimationSpeed(this.getSpeed() + 1.0F);
+                event.getController().setAnimationSpeed(this.getHorizontalVelocity()/attributespeed + 1.0F);
                 break;
         }
-
-        if (this.getAttackState() == 3) {
-            event.setAndContinue(STEELGORE_ATK_CHARGE);
-            event.getController().setAnimationSpeed(1.0F);
-
-        } else if (this.getAttackState() == 4) {
-            event.setAndContinue(STEELGORE_ATK_ROAR);
-            event.getController().setAnimationSpeed(1.0F);
-        }
-
 
         return PlayState.CONTINUE;
     }
 
     protected <E extends SteelgoreEntity> PlayState AtkController(final software.bernie.geckolib.core.animation.AnimationState<E> event) {
 
-        switch (this.getAnimationState()) {
+        switch (this.getAttackState()) {
             case 0:
-                event.setAndContinue(null);
+                event.setAndContinue(STEELGORE_NULL);
                 event.getController().setAnimationSpeed(1.0F);
                 break;
             case 1:
@@ -544,7 +575,7 @@ public class SteelgoreEntity extends UpdraftDragon {
     @Override
     public void registerControllers(final AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "Normal", 5, this::Controller));
-        controllers.add(new AnimationController<>(this, "Attack", 5, this::AtkController));
+        controllers.add(new AnimationController<>(this, "Attack", 2, this::AtkController));
     }
 
     public void stun() {
