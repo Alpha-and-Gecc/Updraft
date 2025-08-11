@@ -2,6 +2,7 @@ package com.alpha_and_gec.updraft.base.common.entities.Steelgore;
 
 import com.alpha_and_gec.updraft.base.common.entities.base.UpdraftDragon;
 import com.alpha_and_gec.updraft.base.common.entities.goals.DragonHurtByTargetGoal;
+import com.alpha_and_gec.updraft.base.common.entities.goals.DragonRandomLookAroundGoal;
 import com.alpha_and_gec.updraft.base.common.entities.navigation.DragonLandRotcappedMoveControl;
 import com.alpha_and_gec.updraft.base.registry.UpdraftEntities;
 import com.alpha_and_gec.updraft.base.registry.UpdraftTags;
@@ -128,9 +129,9 @@ public class SteelgoreEntity extends UpdraftDragon {
         this.goalSelector.addGoal(3, new BreedGoal(this, 1.0D));
         this.goalSelector.addGoal(5, new FollowParentGoal(this, 1.1D));
         this.goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 1.0D));
-        this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(8, new DragonRandomLookAroundGoal(this));
 
-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+        this.targetSelector.addGoal(1, new DragonHurtByTargetGoal(this));
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, LivingEntity.class, true, entity -> entity.getType().is(UpdraftTags.STEELGORE_INTOLERANT)));
         this.targetSelector.addGoal(2, new OwnerHurtByTargetGoal(this));
         this.targetSelector.addGoal(3, new OwnerHurtTargetGoal(this));
@@ -380,6 +381,15 @@ public class SteelgoreEntity extends UpdraftDragon {
         }
 
         return super.mobInteract(pPlayer, pHand);
+    }
+
+    @Override
+    protected Vec3 getRiddenInput(Player pPlayer, Vec3 pTravelVector) {
+        if (this.getAttackState() != 4) {
+            return super.getRiddenInput(pPlayer, pTravelVector);
+        } else {
+            return Vec3.ZERO;
+        }
     }
 
     @Override

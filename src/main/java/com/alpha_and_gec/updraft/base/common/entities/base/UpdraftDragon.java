@@ -197,7 +197,7 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
         this.nowPos = this.position();
 
 
-        if (!this.hasTarget() && !this.hasControllingPassenger()) {
+        if (!this.level().isClientSide() && !this.hasTarget() && !this.hasControllingPassenger()) {
             this.setAttackState(0);
             this.setAttackTime(0);
         }
@@ -565,9 +565,13 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
         Vec2 vec2 = this.getRiddenRotation(pPlayer);
         //this.setRot(vec2.y, vec2.x);
         //System.out.println(vec2);
-        this.setRot((float) (Mth.RAD_TO_DEG * MathHelpers.LerpAngle(Mth.DEG_TO_RAD * this.getYRot(), Mth.DEG_TO_RAD * vec2.y, this.turnSpeed)),
-                (float) (Mth.RAD_TO_DEG * MathHelpers.LerpAngle(Mth.DEG_TO_RAD * this.getXRot(), Mth.DEG_TO_RAD * vec2.x, this.turnSpeed)));
-        this.yRotO = this.yBodyRot = this.yHeadRot = this.getYRot();
+
+        if (this.isMovingForwards()) {
+            //Limit turn speed, and only turn if the creature is moving
+            this.setRot((float) (Mth.RAD_TO_DEG * MathHelpers.LerpAngle(Mth.DEG_TO_RAD * this.getYRot(), Mth.DEG_TO_RAD * vec2.y, this.turnSpeed)),
+                    (float) (Mth.RAD_TO_DEG * MathHelpers.LerpAngle(Mth.DEG_TO_RAD * this.getXRot(), Mth.DEG_TO_RAD * vec2.x, this.turnSpeed)));
+            this.yRotO = this.yBodyRot = this.yHeadRot = this.getYRot();
+        }
 
         this.setTarget(null);
         //System.out.println(this.yBodyRot);
@@ -581,12 +585,18 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
     @Override
     protected Vec3 getRiddenInput(Player pPlayer, Vec3 pTravelVector) {
         float f = pPlayer.xxa * 0.5F;
-        float f1 = pPlayer.zza;
+        float f1 = pPlayer.zza * 0.5F;
+        float f2 = pPlayer.yya;
         if (f1 <= 0.0F) {
             f1 *= 0.25F;
         }
 
-        return new Vec3(f, 0.0F, f1);
+        if (this.isInWater()) {
+            System.out.println(f2);
+            return new Vec3(f, f2, f1);
+        } else {
+            return new Vec3(f, 0.0f, f1);
+        }
     }
 
     @Override

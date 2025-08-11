@@ -1,5 +1,6 @@
 package com.alpha_and_gec.updraft.base.util;
 
+import com.alpha_and_gec.updraft.base.common.entities.base.UpdraftDragon;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -21,15 +22,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PisslikeHitboxes {
-    public static void GenerateHitbox(LivingEntity source,
-                                             Vec3 boxOffset,
-                                             double attackInflation,
-                                             ServerLevel world,
-                                             float damageMult,
-                                             float knockbackMult,
-                                             boolean disableShield) {
+    public static void GenerateHitbox(UpdraftDragon source,
+                                      Vec3 boxOffset,
+                                      double attackInflation,
+                                      ServerLevel world,
+                                      float damageMult,
+                                      float knockbackMult,
+                                      boolean disableShield) {
         //attackInflation is in blocks
 
+        System.out.println(source.getVelocityThroughPos() * 5);
+        boxOffset.add(0, 0, source.getVelocityThroughDeltamovement() * 2);
         Vec3 sourcePos = source.position();
         double entityAngle = (source.getYHeadRot());
         Vec3 truePos = sourcePos.add(boxOffset);
