@@ -2,6 +2,7 @@ package com.alpha_and_gec.updraft.base.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -286,6 +287,29 @@ public class MathHelpers {
 
     public static double flatDist(Vec3 a, Vec3 b) {
         return Math.abs(Math.hypot(a.x - b.x, a.z - b.z));
+    }
+
+    public static Vec3 makeDirVectorFlat(Entity creature) {
+        Vec3 pointer = creature.position().add(0, 0, 1);
+
+        pointer = rotateAroundCenterFlatDeg(creature.position(), pointer, (double) -creature.getYHeadRot());
+
+        double xdir = -((creature.position().x - pointer.x));
+        double zdir = -((creature.position().z - pointer.z));
+
+        return (new Vec3(xdir, creature.getY(), zdir).normalize());
+    }
+
+    public static Vec3 makeDirVector3D(Entity creature) {
+        Vec3 pointer = creature.position().add(0, 0, 1);
+
+        pointer = rotateAroundCenter3dDeg(creature.position(), pointer, -creature.getYHeadRot(), -creature.getXRot());
+
+        double xdir = -((creature.position().x - pointer.x));
+        double ydir = -((creature.position().y - pointer.y));
+        double zdir = -((creature.position().z - pointer.z));
+
+        return (new Vec3(xdir, ydir, zdir).normalize());
     }
 
 }

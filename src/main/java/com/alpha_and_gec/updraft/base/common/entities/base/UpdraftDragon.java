@@ -1,5 +1,7 @@
 package com.alpha_and_gec.updraft.base.common.entities.base;
 
+import com.alpha_and_gec.updraft.base.common.entities.Steelgore.SteelgoreAttacks;
+import com.alpha_and_gec.updraft.base.common.entities.Steelgore.SteelgoreEntity;
 import com.alpha_and_gec.updraft.base.registry.UpdraftItems;
 import com.alpha_and_gec.updraft.base.util.IKSolver;
 import com.alpha_and_gec.updraft.base.util.MathHelpers;
@@ -44,6 +46,13 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
     public static final EntityDataAccessor<Integer> ANIMATION_STATE = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.INT);
     public static final EntityDataAccessor<Integer> ATTACK_STATE = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.INT);
     //states determining which animation this beast should play
+    //0 = no attack
+    //1 = base attack
+    //2 = ranged attack
+    //3 = special attack
+    //4 = cosmetic roar
+    //5 and above are for unique special attacks, note that these are not eligible to be keybound by default
+    //Attackstate is read in the entity's attack goal and riddenTick in order to tick attacks
 
     private static final EntityDataAccessor<Integer> BEHAVIOUR_STATE = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.INT);
     //0 = wander
@@ -293,6 +302,16 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
         return this.wetness > 0;
     }
 
+    public void setFlying(boolean state) {
+        //check when was the last time the dragon touched water
+        this.flightState = state;
+    }
+
+    public boolean isFlying() {
+        //check when was the last time the dragon touched water
+        return this.flightState;
+    }
+
     public boolean isDiving() {
         //check if the dragon is at the correct angle to play the diving animation
 
@@ -516,8 +535,14 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
             pPlayer.setYRot(this.getYRot());
             pPlayer.setXRot(this.getXRot());
             pPlayer.startRiding(this);
+            this.wander();
         }
 
+    }
+
+    @Override
+    public void stopRiding() {
+        super.stopRiding();
     }
 
     @Override
@@ -529,7 +554,10 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
         this.setRot((float) (Mth.RAD_TO_DEG * MathHelpers.LerpAngle(Mth.DEG_TO_RAD * this.getYRot(), Mth.DEG_TO_RAD * vec2.y, this.turnSpeed)),
                 (float) (Mth.RAD_TO_DEG * MathHelpers.LerpAngle(Mth.DEG_TO_RAD * this.getXRot(), Mth.DEG_TO_RAD * vec2.x, this.turnSpeed)));
         this.yRotO = this.yBodyRot = this.yHeadRot = this.getYRot();
+
+        this.setTarget(null);
         //System.out.println(this.yBodyRot);
+
     }
 
     protected Vec2 getRiddenRotation(LivingEntity pEntity) {

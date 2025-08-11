@@ -1,45 +1,44 @@
-package com.alpha_and_gec.updraft.base.common.entities;
+package com.alpha_and_gec.updraft.base.common.entities.Steelgore;
 
 import com.alpha_and_gec.updraft.base.common.entities.base.UpdraftDragon;
 import com.alpha_and_gec.updraft.base.common.entities.goals.DragonHurtByTargetGoal;
-import com.alpha_and_gec.updraft.base.common.entities.goals.Steelgore.SteelgoreAttackGoal;
+import com.alpha_and_gec.updraft.base.common.entities.navigation.DragonLandRotcappedMoveControl;
 import com.alpha_and_gec.updraft.base.registry.UpdraftEntities;
 import com.alpha_and_gec.updraft.base.registry.UpdraftTags;
 import com.alpha_and_gec.updraft.base.util.IKSolver;
-import com.mojang.serialization.Dynamic;
+import com.alpha_and_gec.updraft.base.util.MathHelpers;
+import com.alpha_and_gec.updraft.base.util.PisslikeHitboxes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal;
+import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.scores.PlayerTeam;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
@@ -80,17 +79,19 @@ public class SteelgoreEntity extends UpdraftDragon {
     //cooldown for charge attack, only usable if it is at 0
     public static final double chargeCap = 1000;
 
+    public Vec3 chargeMotion = Vec3.ZERO;
+
     public double goreCD;
     //cooldown for gore attack, only usable if it is at 0
     public static final double goreCap = 5;
 
-    public double breathCharge;
+    //public double breathCharge;
     public double AIbreathCD;
     //cooldown for breath usage, this is unique in that as long as it is below cap the breath charge can be used, and each tick of usage increases the cooldown up to the cap
     //this represents how many ticks it can breath fire for
-    public static final double breathCap = 200;
-    public static final double breathRegen = 1;
-    public static final double breathDrain = 10;
+    public static final double breathCap = 400;
+    //public static final double breathRegen = 1;
+    //public static final double breathDrain = 10;
 
     public double roarCD;
     //cooldown for roaring, ONLY APPLIES TO WILD
@@ -104,6 +105,8 @@ public class SteelgoreEntity extends UpdraftDragon {
     public SteelgoreEntity(EntityType<? extends TamableAnimal> p_30341_, Level p_30342_) {
         super(p_30341_, p_30342_);
 
+        this.moveControl = new DragonLandRotcappedMoveControl(this, 1);
+
         this.tailKinematics = new IKSolver(this, 4, 2, 2, 0.75, 2, false, true);
         this.setMeleeRadius(4.5f);
         this.setMaxUpStep(1);
@@ -111,6 +114,7 @@ public class SteelgoreEntity extends UpdraftDragon {
         this.lootAmount = 6;
         this.turnSpeed = 0.05F;
     }
+
 
     @Nullable
     public AgeableMob getBreedOffspring(ServerLevel level, AgeableMob mob) {
@@ -126,7 +130,7 @@ public class SteelgoreEntity extends UpdraftDragon {
         this.goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
 
-        this.targetSelector.addGoal(1, new DragonHurtByTargetGoal(this));
+        this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, LivingEntity.class, true, entity -> entity.getType().is(UpdraftTags.STEELGORE_INTOLERANT)));
         this.targetSelector.addGoal(2, new OwnerHurtByTargetGoal(this));
         this.targetSelector.addGoal(3, new OwnerHurtTargetGoal(this));
@@ -147,7 +151,7 @@ public class SteelgoreEntity extends UpdraftDragon {
         pCompound.putBoolean("Stunned", this.isStunned());
         pCompound.putDouble("ChargeCooldown", this.chargeCD);
         pCompound.putDouble("GoreCooldown", this.goreCD);
-        pCompound.putDouble("BreathCharge", this.breathCharge);
+        //pCompound.putDouble("BreathCharge", this.breathCharge);
         pCompound.putDouble("RoarCooldown", this.roarCD);
 
         super.addAdditionalSaveData(pCompound);
@@ -156,7 +160,7 @@ public class SteelgoreEntity extends UpdraftDragon {
     public void readAdditionalSaveData(CompoundTag pCompound) {
         this.chargeCD = pCompound.getDouble("ChargeCooldown");
         this.goreCD = pCompound.getDouble("GoreCooldown");
-        this.breathCharge = pCompound.getDouble("BreathCharge");
+        //this.breathCharge = pCompound.getDouble("BreathCharge");
         this.roarCD = pCompound.getDouble("RoarCooldown");
         this.isStunned = pCompound.getBoolean("Stunned");
 
@@ -184,7 +188,7 @@ public class SteelgoreEntity extends UpdraftDragon {
         this.chargeCD = 0;
         this.goreCD = 0;
         this.roarCD = 0;
-        this.breathCharge = breathCap;
+        //this.breathCharge = breathCap;
     }
 
     @Override
@@ -196,9 +200,9 @@ public class SteelgoreEntity extends UpdraftDragon {
         this.goreCD = Math.max(0, goreCD - 1);
         this.roarCD = Math.max(0, roarCD - 1);
         this.AIbreathCD = Math.max(0, AIbreathCD - 1);
-        this.breathCharge = Math.min(breathCap, this.breathCharge + breathRegen);
+        //this.breathCharge = Math.min(breathCap, this.breathCharge + breathRegen);
 
-        System.out.println(this.breathCharge);
+        //System.out.println(this.breathCharge);
     }
 
     @Override
@@ -255,8 +259,10 @@ public class SteelgoreEntity extends UpdraftDragon {
         if (this.canContactDamage() && this.getTarget() != null) {
             pEntity.hurt(this.damageSources().mobAttack(this), (float) (this.getAttribute(Attributes.ATTACK_DAMAGE).getValue() * 3));
 
+
             if (pEntity instanceof LivingEntity liver) {
-                this.knockbackFromSelf(liver, 1);
+                liver.setLastHurtByMob(this);
+                PisslikeHitboxes.knockbackFromSelf(liver, this, 1);
                 liver.setDeltaMovement(liver.getDeltaMovement().add(0, this.getAttributeValue(Attributes.ATTACK_KNOCKBACK) * 0.15, 0));
                 //yes I know vertical knockback is not proportional to horizontal knockback, it looks funnier
             }
@@ -265,11 +271,6 @@ public class SteelgoreEntity extends UpdraftDragon {
         }
 
         super.push(pEntity);
-    }
-
-    public void knockbackFromSelf(LivingEntity target, float multiplier) {
-        Vec3 dirDiff = this.position().subtract(target.position()).normalize();
-        target.knockback(this.getAttributeValue(Attributes.ATTACK_KNOCKBACK) * multiplier, dirDiff.x, dirDiff.z);
     }
 
     public void poof(boolean server) {
@@ -373,7 +374,6 @@ public class SteelgoreEntity extends UpdraftDragon {
                 //if the owner is holding a non - food item whilst shifting, cycle through its behaviour
                 //can't do it if it's swimming, swimming steelgores always follow the player
                 this.cycleBehaviour();
-                //System.out.println(this.getBehaviour());
                 return InteractionResult.sidedSuccess(this.level().isClientSide);
             }
         }
@@ -381,27 +381,42 @@ public class SteelgoreEntity extends UpdraftDragon {
         return super.mobInteract(pPlayer, pHand);
     }
 
-    public static boolean checkSteelgoreSpawnRules(EntityType<SteelgoreEntity> entityType, LevelAccessor level, MobSpawnType spawnType, BlockPos position, RandomSource rand) {
-        return level.getBlockState(position.below()).is(BlockTags.ANIMALS_SPAWNABLE_ON) && isBrightEnoughToSpawn(level, position);
-        //note that steelgores, like all other plains grazers, cannot spawn at night.
+    @Override
+    protected void tickRidden(Player pPlayer, Vec3 pTravelVector) {
+        super.tickRidden(pPlayer, pTravelVector);
+
+        if (!this.level().isClientSide()) {
+            switch (this.getAttackState()) {
+                case 1 -> SteelgoreAttacks.tickGore(this);
+                case 2 -> {
+                    if (this.AIbreathCD == 0) {
+                        SteelgoreAttacks.tickBreath(this);
+                    } else {
+                        this.setAttackState(0);
+                    }
+                }
+                case 3 -> {
+                    if (!this.isFlying() && this.chargeCD == 0) {
+                        SteelgoreAttacks.tickCharge(this);
+                    } else {
+                        this.setAttackState(0);
+                    }
+                }
+                case 4 -> {
+                    if (this.onGround()) {
+                        SteelgoreAttacks.tickRoar(this);
+                    } else {
+                        this.setAttackState(0);
+                    }
+                }
+            }
+        }
     }
 
     @Override
-    public int getMaxSpawnClusterSize() {
-        return 1;
-    }
-
-    public int getVariant() {
-        return 4;
-    }
-
-    @Nullable
-    @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor worldIn, DifficultyInstance difficultyIn, MobSpawnType reason, @Nullable SpawnGroupData spawnDataIn, @Nullable CompoundTag dataTag) {
-        spawnDataIn = super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
-        this.zeroCDs();
-        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
-        //TODO: implement proper spawning(spawns around shipwrecks and swamp huts)
+    public void stopRiding() {
+        super.stopRiding();
+        this.setAttackState(0);
     }
 
     public void switchAnimationState() {
@@ -410,18 +425,27 @@ public class SteelgoreEntity extends UpdraftDragon {
 
         //System.out.println(this.getHorizontalVelocity());
 
-        if (this.isStunned() && !this.isDeadOrDying()) {
+        if (!this.isAlive()) {
+
+            if (!this.onGround() && !this.isInWaterOrBubble()) {
+                this.setAnimationState(4);
+                //air death
+
+            } else if (this.isInWaterOrBubble()) {
+                this.setAnimationState(1);
+                //water death
+
+            } else {
+                this.setAnimationState(8);
+                //land death
+            }
+
+        } else if (this.isStunned) {
             this.setAnimationState(0);
             //stun
 
         } else if (this.isInWaterOrBubble()) {
             //water anims
-
-            if (!this.isAlive()) {
-                this.setAnimationState(1);
-                //water death
-
-            } else {
                 if (this.isWalking()) {
                     this.setAnimationState(2);
                     //swim
@@ -430,32 +454,24 @@ public class SteelgoreEntity extends UpdraftDragon {
                     //water idle
                     this.setAnimationState(3);
                 }
-            }
 
-
-        } else if (!this.onGround()){
+        } else if (!this.onGround() && this.isFlying()){
             //flying anims
 
-            if (!this.isAlive()) {
-                this.setAnimationState(4);
-                //air death
+            if (this.isWalking()) {
 
-            } else {
-                if (this.isWalking()) {
-
-                    if (this.isDiving()) {
-                        this.setAnimationState(5);
-                        //dive
-
-                    } else {
-                        this.setAnimationState(6);
-                        //fly
-                    }
+                if (this.isDiving()) {
+                    this.setAnimationState(5);
+                    //dive
 
                 } else {
-                    //hover
-                    this.setAnimationState(7);
+                    this.setAnimationState(6);
+                    //fly
                 }
+
+            } else {
+                //hover
+                this.setAnimationState(7);
             }
 
         } else {
@@ -588,5 +604,29 @@ public class SteelgoreEntity extends UpdraftDragon {
 
     public boolean isStunned() {
         return this.isStunned;
+    }
+
+
+    public static boolean checkSteelgoreSpawnRules(EntityType<SteelgoreEntity> entityType, LevelAccessor level, MobSpawnType spawnType, BlockPos position, RandomSource rand) {
+        return level.getBlockState(position.below()).is(BlockTags.ANIMALS_SPAWNABLE_ON) && isBrightEnoughToSpawn(level, position);
+        //note that steelgores, like all other plains grazers, cannot spawn at night.
+    }
+
+    @Override
+    public int getMaxSpawnClusterSize() {
+        return 1;
+    }
+
+    public int getVariant() {
+        return 4;
+    }
+
+    @Nullable
+    @Override
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor worldIn, DifficultyInstance difficultyIn, MobSpawnType reason, @Nullable SpawnGroupData spawnDataIn, @Nullable CompoundTag dataTag) {
+        spawnDataIn = super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+        this.zeroCDs();
+        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+        //TODO: implement proper spawning(spawns around shipwrecks and swamp huts)
     }
 }

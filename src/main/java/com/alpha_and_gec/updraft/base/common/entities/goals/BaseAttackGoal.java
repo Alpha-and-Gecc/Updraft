@@ -53,7 +53,10 @@ public class BaseAttackGoal extends Goal{
 
     @Override
     public boolean canUse() {
-        return this.creature.getTarget() != null && this.creature.getTarget().isAlive();
+        return this.creature.getTarget() != null && this.creature.getTarget().isAlive() && !this.creature.hasControllingPassenger();
+        //do not automatically attack if there's nothing to attack
+        //only automatically attack alive targets(very important for dragons)
+        //do not automatically attack if you have a rider
     }
 
     @Override
@@ -64,6 +67,10 @@ public class BaseAttackGoal extends Goal{
             //System.out.println("timeout");
             return false;
             //after 5 minutes of not hitting shit stop attacking
+        }
+
+        if (this.creature.hasControllingPassenger()) {
+            return false;
         }
 
         if (target == null) {

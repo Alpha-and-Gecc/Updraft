@@ -1,32 +1,18 @@
 package com.alpha_and_gec.updraft.base.client.entities.renderer;
 
-import com.alpha_and_gec.updraft.base.Updraft;
-import com.alpha_and_gec.updraft.base.client.entities.model.SteelgoreModel;
 import com.alpha_and_gec.updraft.base.client.entities.renderer.base.UpdraftDragonRenderer;
-import com.alpha_and_gec.updraft.base.common.entities.SteelgoreEntity;
-import com.alpha_and_gec.updraft.base.registry.UpdraftLayers;
+import com.alpha_and_gec.updraft.base.common.entities.Steelgore.SteelgoreEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.layers.RenderLayer;
-import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.Pose;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 @OnlyIn(Dist.CLIENT)
 public class SteelgoreRenderer<T extends SteelgoreEntity> extends UpdraftDragonRenderer<T> {
@@ -38,7 +24,7 @@ public class SteelgoreRenderer<T extends SteelgoreEntity> extends UpdraftDragonR
 
     @Override
     public RenderType getRenderType(T animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
-        return RenderType.entityCutout(getTextureLocation(animatable));
+        return RenderType.entityCutoutNoCull(getTextureLocation(animatable));
     }
 
     @Override

@@ -4,25 +4,11 @@ package com.alpha_and_gec.updraft.base.client.entities.model;// Made with Blockb
 
 
 import com.alpha_and_gec.updraft.base.Updraft;
-import com.alpha_and_gec.updraft.base.client.entities.animations.SteelgoreAnimations;
-import com.alpha_and_gec.updraft.base.common.entities.SteelgoreEntity;
-import com.alpha_and_gec.updraft.base.util.MathHelpers;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.model.HierarchicalModel;
-import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.model.geom.PartPose;
-import net.minecraft.client.model.geom.builders.*;
+import com.alpha_and_gec.updraft.base.common.entities.Steelgore.SteelgoreEntity;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
-import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.model.data.EntityModelData;
 
 
 public class SteelgoreModel extends GeoModel<SteelgoreEntity> {

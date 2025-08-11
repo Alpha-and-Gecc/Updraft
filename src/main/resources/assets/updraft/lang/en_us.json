@@ -1,4 +1,8 @@
 {
+  "key.categories.updraft": "Updraft Keybinds",
+  "key.updraft.dragon_melee": "Dragon mounted standard attack",
+  "key.updraft.dragon_ranged": "Dragon mounted ranged attack",
+
   "creativetab.updraft_tab": "Updraft",
 
   "entity.updraft.steelgore": "Smouldering Steelgore",

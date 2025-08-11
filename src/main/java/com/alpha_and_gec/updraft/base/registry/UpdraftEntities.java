@@ -1,9 +1,8 @@
 package com.alpha_and_gec.updraft.base.registry;
 
 import com.alpha_and_gec.updraft.base.Updraft;
-import com.alpha_and_gec.updraft.base.common.entities.SteelgoreEntity;
+import com.alpha_and_gec.updraft.base.common.entities.Steelgore.SteelgoreEntity;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -14,6 +13,10 @@ import net.minecraftforge.registries.RegistryObject;
 public class UpdraftEntities {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Updraft.MOD_ID);
+
+    //Renderers are registered in ClientEvents
+
+    //SpawnPlacements and Attributes are registered in CommonEvents
 
     public static final RegistryObject<EntityType<SteelgoreEntity>> STEELGORE =
             ENTITY_TYPES.register("steelgore",
