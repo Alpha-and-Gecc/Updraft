@@ -184,6 +184,7 @@ public class SteelgoreEntity extends UpdraftDragon {
         super.tick();
     }
 
+    @Override
     public void zeroCDs() {
         this.chargeCD = 0;
         this.goreCD = 0;
@@ -413,12 +414,6 @@ public class SteelgoreEntity extends UpdraftDragon {
         }
     }
 
-    @Override
-    public void stopRiding() {
-        super.stopRiding();
-        this.setAttackState(0);
-    }
-
     public void switchAnimationState() {
         //method ran per - tick to assert which animation a dragon ought to play
         //serverside only, ran to guarantee checkAnimationState works
@@ -525,11 +520,11 @@ public class SteelgoreEntity extends UpdraftDragon {
                 break;
             case 2:
                 event.setAndContinue(STEELGORE_SWIM);
-                event.getController().setAnimationSpeed(this.getVelocity()/attributespeed + 1.0F);
+                event.getController().setAnimationSpeed(this.getVelocityThroughPos()/attributespeed + 1.0F);
                 break;
             case 3:
                 event.setAndContinue(STEELGORE_WATER_IDLE);
-                event.getController().setAnimationSpeed(this.getVelocity()/attributespeed + 1.0F);
+                event.getController().setAnimationSpeed(this.getVelocityThroughPos()/attributespeed + 1.0F);
                 break;
             case 4:
                 event.setAndContinue(STEELGORE_DEATH_AIR);
@@ -541,11 +536,11 @@ public class SteelgoreEntity extends UpdraftDragon {
                 break;
             case 6:
                 event.setAndContinue(STEELGORE_FLY);
-                event.getController().setAnimationSpeed(this.getVelocity()/attributespeed + 1.0F);
+                event.getController().setAnimationSpeed(this.getVelocityThroughPos()/attributespeed + 1.0F);
                 break;
             case 7:
                 event.setAndContinue(STEELGORE_HOVER);
-                event.getController().setAnimationSpeed(this.getVelocity()/attributespeed + 1.0F);
+                event.getController().setAnimationSpeed(this.getVelocityThroughPos()/attributespeed + 1.0F);
                 break;
             case 8:
                 event.setAnimation(STEELGORE_DEATH);
@@ -621,12 +616,4 @@ public class SteelgoreEntity extends UpdraftDragon {
         return 4;
     }
 
-    @Nullable
-    @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor worldIn, DifficultyInstance difficultyIn, MobSpawnType reason, @Nullable SpawnGroupData spawnDataIn, @Nullable CompoundTag dataTag) {
-        spawnDataIn = super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
-        this.zeroCDs();
-        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
-        //TODO: implement proper spawning(spawns around shipwrecks and swamp huts)
-    }
 }

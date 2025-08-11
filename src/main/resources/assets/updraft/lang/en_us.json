@@ -1,7 +1,9 @@
 {
-  "key.categories.updraft": "Updraft Keybinds",
+  "key.categories.updraft": "Keybinds for Updraft",
   "key.updraft.dragon_melee": "Dragon mounted standard attack",
   "key.updraft.dragon_ranged": "Dragon mounted ranged attack",
+  "key.updraft.dragon_special": "Dragon mounted special attack",
+  "key.updraft.dragon_roar": "Dragon mounted roar",
 
   "creativetab.updraft_tab": "Updraft",
 

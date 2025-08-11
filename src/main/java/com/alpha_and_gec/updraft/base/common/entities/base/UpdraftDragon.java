@@ -27,6 +27,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
@@ -61,6 +62,9 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
 
     private static final EntityDataAccessor<Boolean> IS_PINNED = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.BOOLEAN);
     //I made this a synchedData because it's important to stop the player from carving pinned dragons
+
+    public Vec3 prevPos = Vec3.ZERO;
+    public Vec3 nowPos = Vec3.ZERO;
 
     public SimpleContainer inventory;
 
@@ -189,6 +193,16 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
     public void tick() {
         super.tick();
 
+        this.prevPos = this.nowPos;
+        this.nowPos = this.position();
+
+
+        if (!this.hasTarget() && !this.hasControllingPassenger()) {
+            this.setAttackState(0);
+            this.setAttackTime(0);
+        }
+        //TODO: remove this and use something to detect dismounts, this sucks
+
         if (this.tailKinematics != null) {
             this.tailKinematics.takePerTickAction(this);
         }
@@ -287,6 +301,10 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
         //method ran per - tick to tick down cooldowns
     }
 
+    public void zeroCDs() {
+        //this.breathCharge = breathCap;
+    }
+
     public void checkAnimationState() {
         //method ran per - tick to assert which animation a dragon ought to play
     }
@@ -323,28 +341,29 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
     }
 
     public boolean isMovingForwards() {
-        return this.getVelocity() > this.getAttributeValue(Attributes.MOVEMENT_SPEED)/10;
+        return this.getVelocityThroughPos() > this.getAttributeValue(Attributes.MOVEMENT_SPEED)/10;
     }
 
     public boolean isWalking() {
         return this.getHorizontalVelocity() > this.getAttributeValue(Attributes.MOVEMENT_SPEED)/10;
     }
 
-    public double getVelocity() {
-        //check if the dragon is at the correct angle to play the diving animation
-
-        Vec3 vec3 = this.getDeltaMovement();
+    public double getVelocityThroughPos() {
+        Vec3 vec3 = this.nowPos.subtract(this.prevPos);
 
         return vec3.length();
     }
 
-    public float getHorizontalVelocity() {
-        //check if the dragon is at the correct angle to play the diving animation
+    public double getHorizontalVelocity() {
+        Vec2 vec3 = new Vec2((float) (this.prevPos.x - this.nowPos.x), (float) (this.prevPos.z - this.nowPos.z));
 
+        return vec3.length();
+    }
+
+    public double getVelocityThroughDeltamovement() {
         Vec3 vec3 = this.getDeltaMovement();
-        Vec2 vec2 = new Vec2((float) vec3.x(), (float) vec3.z());
 
-        return vec2.length();
+        return vec3.length();
     }
 
     public boolean isEating() {
@@ -541,11 +560,6 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
     }
 
     @Override
-    public void stopRiding() {
-        super.stopRiding();
-    }
-
-    @Override
     protected void tickRidden(Player pPlayer, Vec3 pTravelVector) {
         super.tickRidden(pPlayer, pTravelVector);
         Vec2 vec2 = this.getRiddenRotation(pPlayer);
@@ -668,5 +682,17 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
     @Override
     public double getTick(Object o) {
         return tickCount;
+    }
+
+    @javax.annotation.Nullable
+    @Override
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor worldIn, DifficultyInstance difficultyIn, MobSpawnType reason, @javax.annotation.Nullable SpawnGroupData spawnDataIn, @javax.annotation.Nullable CompoundTag dataTag) {
+        spawnDataIn = super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+        this.zeroCDs();
+        this.prevPos = this.position();
+        this.nowPos = this.position();
+
+        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+        //TODO: implement proper spawning(spawns around shipwrecks and swamp huts)
     }
 }

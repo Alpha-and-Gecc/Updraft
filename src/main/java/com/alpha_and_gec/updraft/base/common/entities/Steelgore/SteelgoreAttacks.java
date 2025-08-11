@@ -166,10 +166,10 @@ public class SteelgoreAttacks {
         }
 
         if (creature.getAttackTime() == 11) {
-            Predicate<Entity> NOT_A_STEELGORE = (p_33346_) -> p_33346_.isAlive() && !(p_33346_ instanceof SteelgoreEntity) && creature.isSelfFriendly();
+            //Predicate<Entity> NOT_A_STEELGORE = (p_33346_) -> p_33346_.isAlive() && !(p_33346_ instanceof SteelgoreEntity) && creature.isSelfFriendly();
             creature.playSound(SoundEvents.RAVAGER_ROAR);
 
-            for(LivingEntity livingentity : creature.level().getEntitiesOfClass(LivingEntity.class, creature.getBoundingBox().inflate(4.0F), NOT_A_STEELGORE)) {
+            for(LivingEntity livingentity : creature.level().getEntitiesOfClass(LivingEntity.class, creature.getBoundingBox().inflate(4.0F))) {
                 PisslikeHitboxes.knockbackFromSelf(livingentity, creature, 1);
                 creature.poof(true);
             }
