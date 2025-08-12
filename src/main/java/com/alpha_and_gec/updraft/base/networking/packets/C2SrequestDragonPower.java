@@ -8,22 +8,15 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class C2SrequestDragonAttack {
-    private final byte attackStateRequest;
+public class C2SrequestDragonPower {
 
-    //Sends a sum of 8 bits
-
-
-    public C2SrequestDragonAttack(byte attackStateRequest) {
-        this.attackStateRequest = attackStateRequest;
+    public C2SrequestDragonPower() {
     }
 
-    public C2SrequestDragonAttack(FriendlyByteBuf buffer) {
-        this(buffer.readByte());
+    public C2SrequestDragonPower(FriendlyByteBuf buffer) {
     }
 
     public void encode(FriendlyByteBuf buffer) {
-        buffer.writeByte(attackStateRequest);
     }
 
     public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
@@ -31,15 +24,15 @@ public class C2SrequestDragonAttack {
 
         ServerPlayer player = context.getSender();
 
-        if (player == null) {
+        if (player == null || player.getVehicle() == null) {
             return;
         }
 
-        if (player.isPassenger() && player.getVehicle() instanceof UpdraftDragon beast && beast.getAttackState() == 0) {
+        if (player.isPassenger() && player.getVehicle() instanceof UpdraftDragon beast && beast.getAttackState() == 0 && beast.onGround()) {
             //normally there would also be beast.getAttackState() == 0 but I removed that temporarily for debugging
-            beast.setAttackState(this.attackStateRequest);
-            System.out.println("fuck yeah pack et send " + this.attackStateRequest);
+            beast.setPowered(true);
         }
+
         context.setPacketHandled(true);
     }
 }

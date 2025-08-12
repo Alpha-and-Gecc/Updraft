@@ -171,7 +171,7 @@ public class SteelgoreAttacks {
 
             for(LivingEntity livingentity : creature.level().getEntitiesOfClass(LivingEntity.class, creature.getBoundingBox().inflate(4.0F))) {
                 PisslikeHitboxes.knockbackFromSelf(livingentity, creature, 1);
-                creature.poof(true);
+                creature.poof();
             }
 
         }

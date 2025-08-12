@@ -7,16 +7,12 @@ import com.alpha_and_gec.updraft.base.common.entities.navigation.DragonLandRotca
 import com.alpha_and_gec.updraft.base.registry.UpdraftEntities;
 import com.alpha_and_gec.updraft.base.registry.UpdraftTags;
 import com.alpha_and_gec.updraft.base.util.IKSolver;
-import com.alpha_and_gec.updraft.base.util.MathHelpers;
 import com.alpha_and_gec.updraft.base.util.PisslikeHitboxes;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -25,11 +21,9 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
-import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal;
-import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -37,9 +31,8 @@ import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
@@ -114,6 +107,8 @@ public class SteelgoreEntity extends UpdraftDragon {
         this.maxLootAmount = 6;
         this.lootAmount = 6;
         this.turnSpeed = 0.05F;
+
+        this.setFlightVelocityBreakpoints(0.6f, 0.1f);
     }
 
 
@@ -275,22 +270,6 @@ public class SteelgoreEntity extends UpdraftDragon {
         super.push(pEntity);
     }
 
-    public void poof(boolean server) {
-        //make some puffy smoke
-        Vec3 vec3 = this.getBoundingBox().getCenter();
-        for(int i = 0; i < 40; ++i) {
-            double d0 = this.random.nextGaussian() * 0.2;
-            double d1 = this.random.nextGaussian() * 0.2;
-            double d2 = this.random.nextGaussian() * 0.2;
-
-            if (server) {
-                ((ServerLevel) this.level()).sendParticles(ParticleTypes.POOF, vec3.x, vec3.y, vec3.z, 1, d0, d1, d2, 0.1D);
-            } else {
-                this.level().addAlwaysVisibleParticle(ParticleTypes.POOF, vec3.x, vec3.y, vec3.z, d0, d1, d2);
-            }
-        }
-    }
-
     public boolean isFood(ItemStack stack) {
         //System.out.println(stack.is(UpdraftTags.STEELGORE_DIET));
         return stack.is(UpdraftTags.STEELGORE_DIET);
@@ -384,7 +363,7 @@ public class SteelgoreEntity extends UpdraftDragon {
     }
 
     @Override
-    protected Vec3 getRiddenInput(Player pPlayer, Vec3 pTravelVector) {
+    protected @NotNull Vec3 getRiddenInput(Player pPlayer, Vec3 pTravelVector) {
         if (this.getAttackState() != 4) {
             return super.getRiddenInput(pPlayer, pTravelVector);
         } else {
@@ -460,7 +439,7 @@ public class SteelgoreEntity extends UpdraftDragon {
                     this.setAnimationState(3);
                 }
 
-        } else if (!this.onGround() && this.isFlying()){
+        } else if (this.isFlying()){
             //flying anims
 
             if (this.isWalking()) {
@@ -546,11 +525,11 @@ public class SteelgoreEntity extends UpdraftDragon {
                 break;
             case 6:
                 event.setAndContinue(STEELGORE_FLY);
-                event.getController().setAnimationSpeed(this.getVelocityThroughPos()/attributespeed + 1.0F);
+                event.getController().setAnimationSpeed(this.evaluateFlapSpeed(1.5f));
                 break;
             case 7:
                 event.setAndContinue(STEELGORE_HOVER);
-                event.getController().setAnimationSpeed(this.getVelocityThroughPos()/attributespeed + 1.0F);
+                event.getController().setAnimationSpeed(this.evaluateFlapSpeed(1.5f));
                 break;
             case 8:
                 event.setAnimation(STEELGORE_DEATH);

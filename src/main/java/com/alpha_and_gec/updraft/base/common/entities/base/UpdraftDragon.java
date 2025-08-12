@@ -1,13 +1,12 @@
 package com.alpha_and_gec.updraft.base.common.entities.base;
 
-import com.alpha_and_gec.updraft.base.common.entities.Steelgore.SteelgoreAttacks;
-import com.alpha_and_gec.updraft.base.common.entities.Steelgore.SteelgoreEntity;
 import com.alpha_and_gec.updraft.base.registry.UpdraftItems;
 import com.alpha_and_gec.updraft.base.util.IKSolver;
 import com.alpha_and_gec.updraft.base.util.MathHelpers;
 import com.google.common.collect.UnmodifiableIterator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -60,11 +59,14 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
     //1 = sit
     //2 = follow
 
+    private static final EntityDataAccessor<Boolean> TAKE_OFF_FLAG = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.BOOLEAN);
+
+    private static final EntityDataAccessor<Boolean> FLIGHT_STATE = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.BOOLEAN);
+
     private static final EntityDataAccessor<Boolean> IS_PINNED = SynchedEntityData.defineId(UpdraftDragon.class, EntityDataSerializers.BOOLEAN);
     //I made this a synchedData because it's important to stop the player from carving pinned dragons
 
-    public Vec3 prevPos = Vec3.ZERO;
-    public Vec3 nowPos = Vec3.ZERO;
+    public IKSolver tailKinematics;
 
     public SimpleContainer inventory;
 
@@ -82,20 +84,34 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
 
     public int attackTime = 0;
 
-    public IKSolver tailKinematics;
-
-    public boolean flightState = false;
-
     public boolean contactDmg = false;
 
-    public float meleeRadius = 4F;
+    public boolean isPowered = false;
 
-    public float turnSpeed = 0.1F;
+    public float meleeRadius;
+
+    public float maxFlightVelocity;
+
+    public float stallVelocity;
+
+    public float turnSpeed;
     //Number between 0 and 1
 
     public int wetness = 0;
     public int wetlim = 100;
     //how many ticks does it take to dry
+
+    public Vec3 prevPos = Vec3.ZERO;
+    public Vec3 nowPos = Vec3.ZERO;
+
+    public float prevYrot;
+    public float nowYrot;
+
+    public float prevYawDiff;
+    public float nowYawDiff;
+
+    public float tailPrevYaw = 0;
+
 
     protected final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     protected UpdraftDragon(EntityType<? extends TamableAnimal> p_30341_, Level p_30342_) {
@@ -108,10 +124,11 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
         this.entityData.define(ATTACK_STATE, 0);
         this.entityData.define(BEHAVIOUR_STATE, 0);
         this.entityData.define(IS_PINNED, false);
+        this.entityData.define(FLIGHT_STATE, false);
+        this.entityData.define(TAKE_OFF_FLAG, false);
     }
 
     public void addAdditionalSaveData(CompoundTag pCompound) {
-        pCompound.putBoolean("FlightState", this.flightState);
         pCompound.putFloat("LootAmount", this.getLootAmount());
         pCompound.putBoolean("SelfFriendly", this.isSelfFriendly());
         pCompound.putInt("Wetness", this.wetness);
@@ -127,7 +144,6 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
         this.setSelfFriendly(pCompound.getBoolean("SelfFriendly"));
         this.setCanContactDamage(pCompound.getBoolean("ContactDmg"));
         this.wetness = pCompound.getInt("Wetness");
-        this.flightState = pCompound.getBoolean("FlightState");
         this.inventorySize = pCompound.getInt("InvSize");
         this.turnSpeed = pCompound.getFloat("TurnSpeed");
 
@@ -169,6 +185,7 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
             }
 
             if (this.isInWater()) {
+                //slow sink in water
                 Vec3 vec3 = this.getDeltaMovement();
 
                 double d0 = Math.max(-0.1D, vec3.y - 0.01D);
@@ -176,6 +193,7 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
                 this.setDeltaMovement(vec3.x, d0, vec3.z);
 
             } else if (!this.onGround()) {
+                //fall if die in air
                 Vec3 vec3 = this.getDeltaMovement();
 
                 double d0 = Math.max(-0.5D, vec3.y - 0.05D);
@@ -184,7 +202,6 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
             }
 
         }
-
 
         this.move(MoverType.SELF, this.getDeltaMovement());
         this.setOnGroundWithKnownMovement(this.level().getBlockState(this.blockPosition().below()).isSolid(), collide(this.getDeltaMovement()));
@@ -196,10 +213,30 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
         this.prevPos = this.nowPos;
         this.nowPos = this.position();
 
+        this.prevYrot = nowYrot;
+        this.nowYrot = this.getYRot();
+
+        this.prevYawDiff = this.nowYawDiff;
+        this.nowYawDiff = this.nowYrot - this.prevYrot;
+
+        if (this.isFlying()) {
+            this.setNoGravity(true);
+            this.resetFallDistance();
+
+            if (this.tickCount % 5 == 0) {
+                this.getPassengers().forEach(p -> p.resetFallDistance());
+                //every 5 ticks reset fall distance for all passengers
+                //wait is to make it less laggy
+            }
+
+        } else {
+            this.setNoGravity(false);
+        }
 
         if (!this.level().isClientSide() && !this.hasTarget() && !this.hasControllingPassenger()) {
             this.setAttackState(0);
             this.setAttackTime(0);
+            this.land();
         }
         //TODO: remove this and use something to detect dismounts, this sucks
 
@@ -223,13 +260,41 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
 
     public void travel(Vec3 travelVector) {
 
+        //System.out.println(this.justTookOff());
+
         if (this.isOrderedToSit()) {
             this.getNavigation().stop();
             this.setTarget(null);
             //System.out.println("sitte");
+
+        } else if (this.isControlledByLocalInstance() && !this.isInWater() && (this.isFlying() || this.justTookOff())) {
+
+            BlockPos ground = getBlockPosBelowThatAffectsMyMovement();
+            float f = 0.91F;
+            if (this.onGround()) {
+                f = this.level().getBlockState(ground).getFriction(this.level(), ground, this) * 0.91F;
+            }
+
+            if (this.justTookOff()) {
+                this.setDeltaMovement(travelVector.add(0, 1, 0));
+                this.setTookOffFlag(false);
+
+            } else {
+                this.setDeltaMovement(travelVector);
+            }
+
+            this.move(MoverType.SELF, this.getDeltaMovement());
+
+            this.setDeltaMovement(this.getDeltaMovement().scale(f));
+            //^ deceleration
+
+            //System.out.println(travelVector);
+
         } else {
             super.travel(travelVector);
         }
+
+
 
     }
 
@@ -296,6 +361,10 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
         }
     }
 
+    @Override
+    public boolean isInWater() {
+        return this.isInFluidType();
+    }
 
     public void tickCDs() {
         //method ran per - tick to tick down cooldowns
@@ -303,6 +372,11 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
 
     public void zeroCDs() {
         //this.breathCharge = breathCap;
+    }
+
+    public void setFlightVelocityBreakpoints(float maxFlightVelocity, float stallVelocity) {
+        this.maxFlightVelocity = maxFlightVelocity;
+        this.stallVelocity = stallVelocity;
     }
 
     public void checkAnimationState() {
@@ -320,24 +394,80 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
         return this.wetness > 0;
     }
 
+
     public void setFlying(boolean state) {
-        //check when was the last time the dragon touched water
-        this.flightState = state;
+        this.entityData.set(FLIGHT_STATE, state, true);
     }
 
     public boolean isFlying() {
-        //check when was the last time the dragon touched water
-        return this.flightState;
+        //check if the dragon is in the flying state
+        return this.entityData.get(FLIGHT_STATE);
     }
+
+
+
+    public void setTookOffFlag(boolean state) {
+        this.entityData.set(TAKE_OFF_FLAG, state, true);
+    }
+
+    public boolean justTookOff() {
+        //check if the dragon is in the flying state
+        return this.entityData.get(TAKE_OFF_FLAG);
+    }
+
+
+
+    public void takeOff() {
+        if (!this.isUnderWater()) {
+            this.setFlying(true);
+            this.setNoGravity(true);
+            this.poof();
+
+            this.setTookOffFlag(true);
+        }
+    }
+
+    public void tryLand() {
+        if (this.onGround()) {
+            this.land();
+        }
+    }
+
+    public void land() {
+        this.setFlying(false);
+        this.setNoGravity(false);
+    }
+
+
+    public void setPowered(boolean state) {
+        this.isPowered = state;
+    }
+
+    public boolean isPowered() {
+        //check if the dragon is in powered flight
+        return this.isPowered;
+    }
+
 
     public boolean isDiving() {
         //check if the dragon is at the correct angle to play the diving animation
+        //idk why this samples from 0 - 4 while other shit samples from o - 90
 
-        if (!this.onGround() && this.flightState == true && this.getXRot() > 75) {
+        float angle = this.getXRot();
+
+        //System.out.println(angle);
+
+        if (!this.onGround() && this.isFlying() && angle > 3.5) {
             return true;
         } else {
             return false;
         }
+    }
+
+    public float evaluateFlapSpeed(float speedScale) {
+        float angle = this.getXRot();
+        //System.out.println(angle);
+        return (float) (speedScale * (1.25 - (angle/90)));
     }
 
     public boolean isMovingForwards() {
@@ -348,9 +478,14 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
         return this.getHorizontalVelocity() > this.getAttributeValue(Attributes.MOVEMENT_SPEED)/10;
     }
 
+    public boolean isEligibleToLand() {
+        return this.getHorizontalVelocity() < this.stallVelocity;
+    }
+
     public double getVelocityThroughPos() {
         Vec3 vec3 = this.nowPos.subtract(this.prevPos);
 
+        //System.out.println(vec3.length());
         return vec3.length();
     }
 
@@ -579,7 +714,7 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
     }
 
     protected Vec2 getRiddenRotation(LivingEntity pEntity) {
-        return new Vec2(pEntity.getXRot() * 0.5F, pEntity.getYRot());
+        return new Vec2(pEntity.getXRot(), pEntity.getYRot());
     }
 
     @Override
@@ -592,10 +727,36 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
         }
 
         if (this.isInWater()) {
-            System.out.println(f2);
+            //water mounted motion
             return new Vec3(f, f2, f1);
+
+        } else if (this.isFlying()){
+            Vec3 MotionVector = (this.getViewVector(0.0f).normalize().scale(maxFlightVelocity));
+            return MotionVector;
+
         } else {
+            //land mounted motion
             return new Vec3(f, 0.0f, f1);
+
+        }
+    }
+
+    @Override
+    public void travelRidden(Player pPlayer, Vec3 pTravelVector) {
+        Vec3 vec3 = this.getRiddenInput(pPlayer, pTravelVector);
+        this.tickRidden(pPlayer, vec3);
+
+        if (this.isControlledByLocalInstance()) {
+            this.setSpeed(this.getRiddenSpeed(pPlayer));
+            this.travel(vec3);
+            //triggered clientside
+
+        } else {
+            this.calculateEntityAnimation(false);
+            this.setDeltaMovement(Vec3.ZERO);
+            this.tryCheckInsideBlocks();
+            //triggered serverside
+
         }
     }
 
@@ -704,5 +865,21 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
 
         return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
         //TODO: implement proper spawning(spawns around shipwrecks and swamp huts)
+    }
+
+    public void poof() {
+        //make some puffy smoke
+        Vec3 vec3 = this.getBoundingBox().getCenter();
+        for(int i = 0; i < 40; ++i) {
+            double d0 = this.random.nextGaussian() * 0.2;
+            double d1 = this.random.nextGaussian() * 0.2;
+            double d2 = this.random.nextGaussian() * 0.2;
+
+            if (!this.level().isClientSide()) {
+                ((ServerLevel) this.level()).sendParticles(ParticleTypes.POOF, vec3.x, vec3.y, vec3.z, 1, d0, d1, d2, 0.1D);
+            } else {
+                this.level().addAlwaysVisibleParticle(ParticleTypes.POOF, vec3.x, vec3.y, vec3.z, d0, d1, d2);
+            }
+        }
     }
 }

@@ -34,5 +34,7 @@ public class ClientEvents {
         event.register(UpdraftKeybindings.INSTANCE.dragonRanged);
         event.register(UpdraftKeybindings.INSTANCE.dragonSpecial);
         event.register(UpdraftKeybindings.INSTANCE.dragonRoar);
+        event.register(UpdraftKeybindings.INSTANCE.dragonTakeoff);
+        event.register(UpdraftKeybindings.INSTANCE.dragonPower);
     }
 }

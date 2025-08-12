@@ -5,10 +5,16 @@ package com.alpha_and_gec.updraft.base.client.entities.model;// Made with Blockb
 
 import com.alpha_and_gec.updraft.base.Updraft;
 import com.alpha_and_gec.updraft.base.common.entities.Steelgore.SteelgoreEntity;
+import com.alpha_and_gec.updraft.base.util.MathHelpers;
+import com.mojang.math.Axis;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
+import software.bernie.geckolib.constant.DataTickets;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
+import software.bernie.geckolib.model.data.EntityModelData;
 
 
 public class SteelgoreModel extends GeoModel<SteelgoreEntity> {
@@ -58,9 +64,72 @@ public class SteelgoreModel extends GeoModel<SteelgoreEntity> {
 	public void setCustomAnimations(SteelgoreEntity animatable, long instanceId, AnimationState<SteelgoreEntity> animationState) {
 		super.setCustomAnimations(animatable, instanceId, animationState);
 		if (animationState == null) return;
+		EntityModelData extraDataOfType = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 
-		//CoreGeoBone neck = this.getAnimationProcessor().getBone("neck");
-		//CoreGeoBone head = this.getAnimationProcessor().getBone("head");
+		CoreGeoBone root = this.getAnimationProcessor().getBone("core");
+		CoreGeoBone tail1 = this.getAnimationProcessor().getBone("tail1");
+		CoreGeoBone tail2 = this.getAnimationProcessor().getBone("tail2");
+		CoreGeoBone tail3 = this.getAnimationProcessor().getBone("tail3");
+		CoreGeoBone tail4 = this.getAnimationProcessor().getBone("tail4");
+		CoreGeoBone tail5 = this.getAnimationProcessor().getBone("tail5");
+		CoreGeoBone tail6 = this.getAnimationProcessor().getBone("tail6");
+
+		CoreGeoBone t1roll = this.getAnimationProcessor().getBone("t1roll");
+		CoreGeoBone t2roll = this.getAnimationProcessor().getBone("t2roll");
+		CoreGeoBone t3roll = this.getAnimationProcessor().getBone("t3roll");
+		CoreGeoBone t4roll = this.getAnimationProcessor().getBone("t4roll");
+		CoreGeoBone t5roll = this.getAnimationProcessor().getBone("t5roll");
+		CoreGeoBone t6roll = this.getAnimationProcessor().getBone("t6roll");
+
+
+
+		float lerpSpeed = 0.005f;
+		float moderation = 0.1f;
+
+		if (animatable.isFlying()) {
+			int rollmult = 10;
+			moderation = 0.1f;
+
+			root.setRotX(extraDataOfType.headPitch() * (Mth.DEG_TO_RAD));
+			root.setRotZ(Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * (Mth.DEG_TO_RAD));
+
+			tail1.setRotZ(Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * -(Mth.DEG_TO_RAD));
+
+			t1roll.setRotZ(Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * (Mth.DEG_TO_RAD));
+			t2roll.setRotZ(Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * (Mth.DEG_TO_RAD));
+			t3roll.setRotZ(Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * (Mth.DEG_TO_RAD));
+			t4roll.setRotZ(Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * (Mth.DEG_TO_RAD));
+			t5roll.setRotZ(Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * (Mth.DEG_TO_RAD));
+			t6roll.setRotZ(Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * (Mth.DEG_TO_RAD));
+		}
+
+		//System.out.println(extraDataOfType.netHeadYaw());
+
+		tail1.setRotY(MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
+		tail2.setRotY(MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
+		tail3.setRotY(MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
+		tail4.setRotY(MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
+		tail5.setRotY(MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
+		tail6.setRotY(MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
+		//basically lerp from the last angle of the tail relative to the world axis to the current heading of the creature (0)
+		//you HAVE to use geckolib's lerpYaw() function(I ported it to MathHelpers so that I can use the same argument order as my own lerp stuff)
+
+		//System.out.println(MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0));
+
+		animatable.tailPrevYaw = MathHelpers.WrappedLerp(0.01f, animatable.tailPrevYaw, 0);
+		//return to center
+		//must be faster/have higher weight than the following line
+
+		animatable.tailPrevYaw += MathHelpers.WrappedLerp(0.005f, animatable.prevYawDiff, animatable.nowYawDiff);
+		//adds deltarotation
+
+		if (animatable.tailPrevYaw < -160 ) {
+			animatable.tailPrevYaw = -160;
+		} else if (animatable.tailPrevYaw > 160) {
+			animatable.tailPrevYaw = 160;
+		}
+		//clamps the tail rotations
 	}
+
 
 }

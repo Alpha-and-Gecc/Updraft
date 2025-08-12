@@ -5,6 +5,8 @@ import com.alpha_and_gec.updraft.base.client.entities.model.SteelgoreModel;
 import com.alpha_and_gec.updraft.base.client.entities.renderer.SteelgoreRenderer;
 import com.alpha_and_gec.updraft.base.networking.UpdraftPacketHandler;
 import com.alpha_and_gec.updraft.base.networking.packets.C2SrequestDragonAttack;
+import com.alpha_and_gec.updraft.base.networking.packets.C2SrequestDragonPower;
+import com.alpha_and_gec.updraft.base.networking.packets.C2SrequestDragonTakeoff;
 import com.alpha_and_gec.updraft.base.registry.UpdraftEntities;
 import com.alpha_and_gec.updraft.base.registry.UpdraftKeybindings;
 import net.minecraft.client.Minecraft;
@@ -40,6 +42,14 @@ public class ClientForgeEvents {
 
         if(UpdraftKeybindings.INSTANCE.dragonRoar.consumeClick() && game.player != null) {
             UpdraftPacketHandler.sendToServer(new C2SrequestDragonAttack((byte) 4));
+        }
+
+        if(UpdraftKeybindings.INSTANCE.dragonTakeoff.consumeClick() && game.player != null && game.player.getVehicle() != null) {
+            UpdraftPacketHandler.sendToServer(new C2SrequestDragonTakeoff());
+        }
+
+        if(UpdraftKeybindings.INSTANCE.dragonPower.isDown() && game.player != null && game.player.getVehicle() != null) {
+            UpdraftPacketHandler.sendToServer(new C2SrequestDragonPower());
         }
 
     }

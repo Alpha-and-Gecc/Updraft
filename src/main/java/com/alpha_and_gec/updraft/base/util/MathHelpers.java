@@ -1,5 +1,7 @@
 package com.alpha_and_gec.updraft.base.util;
 
+import com.eliotlash.mclib.utils.Interpolations;
+import com.eliotlash.mclib.utils.MathHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -283,6 +285,15 @@ public class MathHelpers {
         double distance = ((2.0 * difference) % (Math.PI*2)) - difference;
 
         return p_from + distance * p_weight;
+    }
+
+    public static float WrappedLerp(double position, double a, double b) {
+        //exact same as LerpAngle except parameters are switched around so I don't have to rewrite IKsolver..
+        //Uses and outputs radians
+
+        a = MathHelper.wrapDegrees(a);
+        b = MathHelper.wrapDegrees(b);
+        return (float) Interpolations.lerp(a, Interpolations.normalizeYaw(a, b), position);
     }
 
     public static double flatDist(Vec3 a, Vec3 b) {

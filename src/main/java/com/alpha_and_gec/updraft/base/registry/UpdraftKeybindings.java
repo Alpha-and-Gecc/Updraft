@@ -55,6 +55,23 @@ public class UpdraftKeybindings {
             UpdraftKeybindings.UPDRAFTKEYBINDCATEGORY
     );
 
+    public final KeyMapping dragonTakeoff = new KeyMapping(
+            "key."  + Updraft.MOD_ID + ".dragon_takeoff",
+            KeyConflictContext.IN_GAME,
+            InputConstants.getKey(InputConstants.KEY_SPACE, -1),
+            UpdraftKeybindings.UPDRAFTKEYBINDCATEGORY
+            //first, boost dragon up a few blocks
+            //second, check if dragon is underwater
+            //third, initiate flight state if dragon isn't underwater
+    );
+
+    public final KeyMapping dragonPower = new KeyMapping(
+            "key."  + Updraft.MOD_ID + ".dragon_power",
+            KeyConflictContext.IN_GAME,
+            InputConstants.getKey(InputConstants.KEY_SPACE, -1),
+            UpdraftKeybindings.UPDRAFTKEYBINDCATEGORY
+    );
+
 
     //1. register keybinds in ClientEvents
     //2. catch keybinds and use them for stuff in ClientForgeEvents
