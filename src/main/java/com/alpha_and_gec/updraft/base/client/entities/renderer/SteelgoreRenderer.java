@@ -1,6 +1,7 @@
 package com.alpha_and_gec.updraft.base.client.entities.renderer;
 
 import com.alpha_and_gec.updraft.base.client.entities.renderer.base.UpdraftDragonRenderer;
+import com.alpha_and_gec.updraft.base.client.entities.renderer.layers.RiderLayer;
 import com.alpha_and_gec.updraft.base.common.entities.Steelgore.SteelgoreEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -20,6 +21,7 @@ public class SteelgoreRenderer<T extends SteelgoreEntity> extends UpdraftDragonR
 
     public SteelgoreRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> modelProvider) {
         super(renderManager, modelProvider);
+        this.addRenderLayer(new RiderLayer<>(this));
     }
 
     @Override

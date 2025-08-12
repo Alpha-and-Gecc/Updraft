@@ -9,6 +9,7 @@ import com.alpha_and_gec.updraft.base.util.MathHelpers;
 import com.mojang.math.Axis;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
@@ -81,14 +82,11 @@ public class SteelgoreModel extends GeoModel<SteelgoreEntity> {
 		CoreGeoBone t5roll = this.getAnimationProcessor().getBone("t5roll");
 		CoreGeoBone t6roll = this.getAnimationProcessor().getBone("t6roll");
 
-
-
 		float lerpSpeed = 0.005f;
 		float moderation = 0.1f;
 
 		if (animatable.isFlying()) {
 			int rollmult = 10;
-			moderation = 0.1f;
 
 			root.setRotX(extraDataOfType.headPitch() * (Mth.DEG_TO_RAD));
 			root.setRotZ(Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * (Mth.DEG_TO_RAD));

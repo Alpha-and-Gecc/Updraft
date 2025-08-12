@@ -7,11 +7,13 @@ import com.alpha_and_gec.updraft.base.common.entities.navigation.DragonLandRotca
 import com.alpha_and_gec.updraft.base.registry.UpdraftEntities;
 import com.alpha_and_gec.updraft.base.registry.UpdraftTags;
 import com.alpha_and_gec.updraft.base.util.IKSolver;
+import com.alpha_and_gec.updraft.base.util.MathHelpers;
 import com.alpha_and_gec.updraft.base.util.PisslikeHitboxes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -74,6 +76,8 @@ public class SteelgoreEntity extends UpdraftDragon {
     public static final double chargeCap = 1000;
 
     public Vec3 chargeMotion = Vec3.ZERO;
+
+    public Vec3 playerSitPosition = Vec3.ZERO;
 
     public double goreCD;
     //cooldown for gore attack, only usable if it is at 0

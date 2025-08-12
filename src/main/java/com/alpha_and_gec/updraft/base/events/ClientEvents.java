@@ -12,10 +12,15 @@ import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = Updraft.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientEvents {
 
+    public static Set<UUID> dragonRiders = new HashSet<>();
     //@SubscribeEvent
     //public static void init(final FMLClientSetupEvent event) {
     //    event.enqueueWork(UpdraftItemProperties::registerItemProperties);

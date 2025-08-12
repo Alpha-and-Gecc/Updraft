@@ -6,8 +6,8 @@
 				"identifier": "geometry.steelgore",
 				"texture_width": 512,
 				"texture_height": 512,
-				"visible_bounds_width": 25,
-				"visible_bounds_height": 6,
+				"visible_bounds_width": 28,
+				"visible_bounds_height": 8,
 				"visible_bounds_offset": [0, 2, 0]
 			},
 			"bones": [
@@ -30,6 +30,11 @@
 					]
 				},
 				{
+					"name": "rider1",
+					"parent": "torso",
+					"pivot": [0, 33, -3]
+				},
+				{
 					"name": "elytrae",
 					"parent": "torso",
 					"pivot": [0, 30, -8]
@@ -47,7 +52,7 @@
 					"parent": "elytrae",
 					"pivot": [-4, 32, -19],
 					"cubes": [
-						{"origin": [-10, 16, -20], "size": [10, 17, 38], "uv": [0, 239]}
+						{"origin": [-10, 16, -20], "size": [10, 17, 38], "uv": [238, 233], "mirror": true}
 					]
 				},
 				{

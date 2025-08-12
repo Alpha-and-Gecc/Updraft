@@ -418,7 +418,7 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
 
 
     public void takeOff() {
-        if (!this.isUnderWater()) {
+        if (!this.isInWater()) {
             this.setFlying(true);
             this.setNoGravity(true);
             this.poof();
@@ -768,6 +768,16 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
     @Override
     protected void positionRider(Entity pPassenger, Entity.MoveFunction pCallback) {
         super.positionRider(pPassenger, pCallback);
+
+        Vec3 offset = getPassengerPosOffset(pPassenger, getPassengers().indexOf(pPassenger));
+
+        Vec3 pos = MathHelpers.rotateXZVectorByYawAngle(yBodyRot, offset.x, offset.z).add(getX(), getY() + offset.y + pPassenger.getMyRidingOffset(), getZ());
+        pPassenger.setPos(pos.x, pos.y, pos.z);
+    }
+
+    public Vec3 getPassengerPosOffset(Entity entity, int index) {
+        //Note: Method will, probably, be Overriden in child classes
+        return new Vec3(0, getPassengersRidingOffset(), 0);
     }
 
     @Override

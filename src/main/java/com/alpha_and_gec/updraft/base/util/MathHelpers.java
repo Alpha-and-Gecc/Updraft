@@ -279,6 +279,7 @@ public class MathHelpers {
     public static double LerpAngle(double p_from, double p_to, double p_weight) {
         //Lerp angles..
         //Uses and outputs radians
+        //ripped off stackOverflow
 
         double difference = (p_to - p_from) % (Math.PI*2);
 
@@ -289,7 +290,7 @@ public class MathHelpers {
 
     public static float WrappedLerp(double position, double a, double b) {
         //exact same as LerpAngle except parameters are switched around so I don't have to rewrite IKsolver..
-        //Uses and outputs radians
+        //Uses and outputs degrees
 
         a = MathHelper.wrapDegrees(a);
         b = MathHelper.wrapDegrees(b);
@@ -321,6 +322,11 @@ public class MathHelpers {
         double zdir = -((creature.position().z - pointer.z));
 
         return (new Vec3(xdir, ydir, zdir).normalize());
+    }
+
+    public static Vec3 rotateXZVectorByYawAngle(float yawAngleDEG, double xOffset, double zOffset)
+    {
+        return new Vec3(xOffset, 0, zOffset).yRot(-yawAngleDEG * (Mth.PI / 180f));
     }
 
 }
