@@ -21,7 +21,6 @@ public class SteelgoreRenderer<T extends SteelgoreEntity> extends UpdraftDragonR
 
     public SteelgoreRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> modelProvider) {
         super(renderManager, modelProvider);
-        this.addRenderLayer(new RiderLayer<>(this));
     }
 
     @Override

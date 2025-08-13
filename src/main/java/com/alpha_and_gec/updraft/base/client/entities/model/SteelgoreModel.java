@@ -11,6 +11,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
@@ -67,7 +70,12 @@ public class SteelgoreModel extends GeoModel<SteelgoreEntity> {
 		if (animationState == null) return;
 		EntityModelData extraDataOfType = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 
-		CoreGeoBone root = this.getAnimationProcessor().getBone("core");
+		GeoBone root = this.getBone("root").get();
+		GeoBone geoCore = this.getBone("core").get();
+		GeoBone torso = this.getBone("torso").get();
+		GeoBone rider = this.getBone("rider1").get();
+
+		CoreGeoBone core = this.getAnimationProcessor().getBone("core");
 		CoreGeoBone tail1 = this.getAnimationProcessor().getBone("tail1");
 		CoreGeoBone tail2 = this.getAnimationProcessor().getBone("tail2");
 		CoreGeoBone tail3 = this.getAnimationProcessor().getBone("tail3");
@@ -88,10 +96,10 @@ public class SteelgoreModel extends GeoModel<SteelgoreEntity> {
 		if (animatable.isFlying()) {
 			int rollmult = 10;
 
-			root.setRotX(extraDataOfType.headPitch() * (Mth.DEG_TO_RAD));
-			root.setRotZ(Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * (Mth.DEG_TO_RAD));
+			core.setRotX(core.getRotX() + extraDataOfType.headPitch() * (Mth.DEG_TO_RAD));
+			core.setRotZ(core.getRotZ() + Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * (Mth.DEG_TO_RAD));
 
-			tail1.setRotZ(Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * -(Mth.DEG_TO_RAD));
+			tail1.setRotZ(tail1.getRotZ() + Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * -(Mth.DEG_TO_RAD));
 
 			t1roll.setRotZ(Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * (Mth.DEG_TO_RAD));
 			t2roll.setRotZ(Mth.lerp(animationState.getPartialTick(), -animatable.prevYawDiff * rollmult, -animatable.nowYawDiff * rollmult) * (Mth.DEG_TO_RAD));
@@ -103,12 +111,12 @@ public class SteelgoreModel extends GeoModel<SteelgoreEntity> {
 
 		//System.out.println(extraDataOfType.netHeadYaw());
 
-		tail1.setRotY(MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
-		tail2.setRotY(MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
-		tail3.setRotY(MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
-		tail4.setRotY(MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
-		tail5.setRotY(MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
-		tail6.setRotY(MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
+		tail1.setRotY(tail1.getRotY() + MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
+		tail2.setRotY(tail2.getRotY() + MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
+		tail3.setRotY(tail3.getRotY() + MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
+		tail4.setRotY(tail4.getRotY() + MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
+		tail5.setRotY(tail5.getRotY() + MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
+		tail6.setRotY(tail6.getRotY() + MathHelpers.WrappedLerp(lerpSpeed, animatable.tailPrevYaw * moderation, 0) * Mth.DEG_TO_RAD);
 		//basically lerp from the last angle of the tail relative to the world axis to the current heading of the creature (0)
 		//you HAVE to use geckolib's lerpYaw() function(I ported it to MathHelpers so that I can use the same argument order as my own lerp stuff)
 
@@ -127,6 +135,11 @@ public class SteelgoreModel extends GeoModel<SteelgoreEntity> {
 			animatable.tailPrevYaw = 160;
 		}
 		//clamps the tail rotations
+
+		if (animatable.hasControllingPassenger()) {
+			Matrix4f faaaa = torso.getModelSpaceMatrix();
+			animatable.riderRotMatrix = faaaa;
+		}
 	}
 
 

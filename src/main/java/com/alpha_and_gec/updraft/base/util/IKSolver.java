@@ -119,7 +119,7 @@ public class IKSolver {
 
         this.calculateTailAngles(entity);
 
-        this.visualizeNodes(entity.level());
+        //this.visualizeNodes(entity.level());
     }
 
 

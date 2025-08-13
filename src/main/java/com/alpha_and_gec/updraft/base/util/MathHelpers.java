@@ -324,6 +324,30 @@ public class MathHelpers {
         return (new Vec3(xdir, ydir, zdir).normalize());
     }
 
+    public static Vec3 makeUpVector3d(Entity creature) {
+        Vec3 pointer = creature.position().add(0, 1, 0);
+
+        pointer = rotateAroundCenter3dDeg(creature.position(), pointer, -creature.getYHeadRot(), -creature.getXRot());
+
+        double xdir = -((creature.position().x - pointer.x));
+        double ydir = -((creature.position().y - pointer.y));
+        double zdir = -((creature.position().z - pointer.z));
+
+        return (new Vec3(xdir, ydir, zdir).normalize());
+    }
+
+    public static Vec3 makePosXVector3d(Entity creature) {
+        Vec3 pointer = creature.position().add(1, 0, 0);
+
+        pointer = rotateAroundCenter3dDeg(creature.position(), pointer, -creature.getYHeadRot(), -creature.getXRot());
+
+        double xdir = -((creature.position().x - pointer.x));
+        double ydir = -((creature.position().y - pointer.y));
+        double zdir = -((creature.position().z - pointer.z));
+
+        return (new Vec3(xdir, ydir, zdir).normalize());
+    }
+
     public static Vec3 rotateXZVectorByYawAngle(float yawAngleDEG, double xOffset, double zOffset)
     {
         return new Vec3(xOffset, 0, zOffset).yRot(-yawAngleDEG * (Mth.PI / 180f));

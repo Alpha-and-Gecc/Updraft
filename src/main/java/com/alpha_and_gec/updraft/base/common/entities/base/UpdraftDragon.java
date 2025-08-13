@@ -37,6 +37,9 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -67,6 +70,8 @@ public class UpdraftDragon extends TamableAnimal implements Saddleable, GeoAnima
     //I made this a synchedData because it's important to stop the player from carving pinned dragons
 
     public IKSolver tailKinematics;
+
+    public Matrix4f riderRotMatrix = new Matrix4f();
 
     public SimpleContainer inventory;
 
