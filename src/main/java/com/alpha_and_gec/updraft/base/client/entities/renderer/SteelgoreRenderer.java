@@ -1,7 +1,6 @@
 package com.alpha_and_gec.updraft.base.client.entities.renderer;
 
 import com.alpha_and_gec.updraft.base.client.entities.renderer.base.UpdraftDragonRenderer;
-import com.alpha_and_gec.updraft.base.client.entities.renderer.layers.RiderLayer;
 import com.alpha_and_gec.updraft.base.common.entities.Steelgore.SteelgoreEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
